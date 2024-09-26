@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.postgres.fields import ArrayField
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, phone_number, password=None, **extra_fields):
@@ -25,6 +26,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         ('staff', 'Staff'),
     ]
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    checklist = ArrayField(models.CharField(max_length=100), null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     STATUS_CHOICES = [

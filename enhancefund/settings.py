@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
+from datetime import timedelta
 
 from pathlib import Path
 
@@ -42,8 +43,19 @@ INSTALLED_APPS = [
     'borrower',
     'investor',
     'staff',
-    'rest_framework'
+    'rest_framework',
+    'rest_framework.authtoken'
+
 ]
+REST_FRAMEWORK = {
+    'EXCEPTION_HANDLER': 'enhancefund.permissions.custom_exception_handler',
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    ]
+}
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
