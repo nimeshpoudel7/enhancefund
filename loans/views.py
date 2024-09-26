@@ -1,3 +1,5 @@
 from django.shortcuts import render
 
-# Create your views here.
+
+def loan_list(request):
+    return render(request, 'loans/list.html')

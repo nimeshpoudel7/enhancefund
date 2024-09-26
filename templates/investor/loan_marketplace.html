@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+  <h2>Loan Marketplace</h2>
+  <ul>
+    {% for loan in loan_requests %}
+      <li>
+        {{ loan.borrower.user.username }} - {{ loan.amount }} - {{ loan.risk_rating }}
+        <a href="{% url 'invest_in_loan' loan.id %}">Invest</a>
+      </li>
+    {% empty %}
+      <li>No loan requests available at the moment.</li>
+    {% endfor %}
+  </ul>
+{% endblock %}

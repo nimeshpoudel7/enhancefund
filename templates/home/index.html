@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	{% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to EnhanceFund</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <header>
+        <h1>Welcome to EnhanceFund</h1>
+        <p>Your trusted Peer-to-Peer Loan and Investment platform</p>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="{% url 'borrower:apply' %}">Borrow Money</a></li>
+            <li><a href="{% url 'investor:dashboard' %}">Invest in Loans</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <section>
+            <h2>For Borrowers</h2>
+            <p>Apply for loans and get funded by investors quickly.</p>
+            <a href="{% url 'borrower:apply' %}" class="cta-button">Apply for a Loan</a>
+        </section>
+
+        <section>
+            <h2>For Investors</h2>
+            <p>Fund loans and earn returns on your investments.</p>
+            <a href="{% url 'investor:dashboard' %}" class="cta-button">View Investment Opportunities</a>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 EnhanceFund. All rights reserved.</p>
+    </footer>
+</body>
+</html>

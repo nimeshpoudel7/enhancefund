@@ -1,17 +1,15 @@
-# loans/models.py
 from django.db import models
-from django.conf import settings
+from django.conf import settings  # To reference the AUTH_USER_MODEL
 
-class Loan(models.Model):
-    borrower = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='loans')
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    interest_rate = models.DecimalField(max_digits=5, decimal_places=2)
-    term_in_months = models.IntegerField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=20, default='PENDING')
 
-class Investment(models.Model):
-    investor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='investments')
-    loan = models.ForeignKey(Loan, on_delete=models.CASCADE, related_name='investments')
+class LoanRequest(models.Model):
+    borrower = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # Link to the user model
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    created_at = models.DateTimeField(auto_now_add=True)
+    duration = models.IntegerField()  # Loan duration in months
+    purpose = models.TextField()  # Purpose of the loan
+    # File upload for income proof
+    income_proof = models.FileField(upload_to='income_proofs/')
+
+    def __str__(self):
+        return f"Loan request by {self.borrower.username} for {self.amount}"

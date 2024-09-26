@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+  <h2>Verify Borrower Documents</h2>
+  <ul>
+    {% for borrower in borrowers %}
+      <li>
+        {{ borrower.user.username }}
+        <a href="{{ borrower.income_proof.url }}">View Income Proof</a>
+        <a href="{% url 'approve_borrower' borrower.id %}">Approve</a>
+      </li>
+    {% empty %}
+      <li>No borrowers pending verification.</li>
+    {% endfor %}
+  </ul>
+{% endblock %}

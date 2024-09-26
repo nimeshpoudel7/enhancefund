@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+  <h2>Invest in Loan</h2>
+  <p>Loan Amount: {{ loan.amount }}</p>
+  <p>Amount Funded: {{ loan.amount_funded }}</p>
+  <p>Risk Rating: {{ loan.risk_rating }}</p>
+  <form method="post">
+    {% csrf_token %}
+    <label for="amount">Amount to Invest:</label>
+    <input type="number" name="amount" max="{{ loan.amount_needed }}" required>
+    <button type="submit">Invest</button>
+  </form>
+{% endblock %}

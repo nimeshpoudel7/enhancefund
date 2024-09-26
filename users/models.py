@@ -2,10 +2,15 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+
 class User(AbstractUser):
-    USER_TYPE_CHOICES = (
-        ('STAFF', 'Staff'),
-        ('BORROWER', 'Borrower'),
-        ('INVESTOR', 'Investor'),
+    ROLE_CHOICES = (
+        ('borrower', 'Borrower'),
+        ('investor', 'Investor'),
+        ('staff', 'Staff'),
     )
-    user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES)
+    role = models.CharField(
+        max_length=10, choices=ROLE_CHOICES, default='borrower')
+
+    def __str__(self):
+        return self.username
