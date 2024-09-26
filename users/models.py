@@ -1,11 +1,88 @@
-# users/models.py
-from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 
-class User(AbstractUser):
-    USER_TYPE_CHOICES = (
-        ('STAFF', 'Staff'),
-        ('BORROWER', 'Borrower'),
-        ('INVESTOR', 'Investor'),
+class CustomUserManager(BaseUserManager):
+    def create_user(self, email, phone_number, password=None, **extra_fields):
+        if not email:
+            raise ValueError('The Email field must be set')
+        email = self.normalize_email(email)
+        user = self.model(email=email, phone_number=phone_number, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, phone_number, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        return self.create_user(email, phone_number, password, **extra_fields)
+
+class User(AbstractBaseUser, PermissionsMixin):
+    email = models.EmailField(unique=True)
+    phone_number = models.CharField(max_length=20, unique=True)
+    ROLE_CHOICES = [
+        ('borrower', 'Borrower'),
+        ('investor', 'Investor'),
+        ('staff', 'Staff'),
+    ]
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+        ('suspended', 'Suspended'),
+    ]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    stripe_customer_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+
+    objects = CustomUserManager()
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['phone_number']
+
+    groups = models.ManyToManyField(
+        'auth.Group',
+        verbose_name='groups',
+        blank=True,
+        help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.',
+        related_name="custom_user_set",
+        related_query_name="user",
     )
-    user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES)
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        verbose_name='user permissions',
+        blank=True,
+        help_text='Specific permissions for this user.',
+        related_name="custom_user_set",
+        related_query_name="user",
+    )
+
+    class Meta:
+        db_table = 'users'
+
+    def __str__(self):
+        return self.email
+class UserVerification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    VERIFICATION_TYPE_CHOICES = [
+        ('identity', 'Identity'),
+        ('address', 'Address'),
+        ('income', 'Income'),
+    ]
+    verification_type = models.CharField(max_length=20, choices=VERIFICATION_TYPE_CHOICES)
+    VERIFICATION_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('verified', 'Verified'),
+        ('failed', 'Failed'),
+    ]
+    verification_status = models.CharField(max_length=20, choices=VERIFICATION_STATUS_CHOICES, default='pending')
+    document_url = models.CharField(max_length=255)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    verified_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'user_verifications'
+    def __str__(self):
+        return f"Verification: {self.user.email} - {self.verification_type}"

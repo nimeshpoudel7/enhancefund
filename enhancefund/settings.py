@@ -37,6 +37,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'users',
+    'loans',
+    'borrower',
+    'investor',
+    'staff',
+    'rest_framework'
 ]
 
 MIDDLEWARE = [
@@ -69,14 +75,19 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'enhancefund.wsgi.application'
 
+AUTH_USER_MODEL = 'users.User'
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',  # Replace with your database name
+        'USER': 'postgres.poaxfllztfvtftjuiecj',   # Replace with your PostgreSQL username
+        'PASSWORD': '#Lambtoncollege2024', # Replace with your PostgreSQL password
+        'HOST': 'aws-0-us-west-1.pooler.supabase.com',        # Replace with your database host (default is 'localhost')
+        'PORT': '6543',             # Replace with your database port (default is '5432')
     }
 }
 
