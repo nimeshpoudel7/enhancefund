@@ -20,6 +20,7 @@ class CustomUserManager(BaseUserManager):
 class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     phone_number = models.CharField(max_length=20, unique=True)
+
     ROLE_CHOICES = [
         ('borrower', 'Borrower'),
         ('investor', 'Investor'),
@@ -35,6 +36,9 @@ class User(AbstractBaseUser, PermissionsMixin):
         ('suspended', 'Suspended'),
     ]
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    date_of_birth = models.DateField(null=True, blank=True)
+    first_name = models.CharField(max_length=255,null=True, blank=True)
+    last_name = models.CharField(max_length=255,null=True, blank=True)
     stripe_customer_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -88,3 +92,28 @@ class UserVerification(models.Model):
         db_table = 'user_verifications'
     def __str__(self):
         return f"Verification: {self.user.email} - {self.verification_type}"
+
+
+class UserAddress(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    street_address = models.CharField(max_length=255, null=True, blank=True)
+    city = models.CharField(max_length=100, null=True, blank=True)
+    state = models.CharField(max_length=100, null=True, blank=True)
+    country = models.CharField(max_length=50, null=True, blank=True)
+    postal_code = models.CharField(max_length=20, null=True, blank=True)
+
+    class Meta:
+        db_table = 'user_address'
+
+    def __str__(self):
+        return (
+            "{"
+            f"street_address: '{self.street_address or ''}', "
+            f"city: '{self.city or ''}', "
+            f"state: '{self.state or ''}', "
+            f"country: '{self.country or ''}', "
+            f"postal_code: '{self.postal_code or ''}'"
+            "}"
+        )
+
+

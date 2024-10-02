@@ -12,6 +12,10 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from datetime import timedelta
 
 from pathlib import Path
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +29,9 @@ SECRET_KEY = 'django-insecure-b_uxp14&t!s&5-t-qs*9^-6*#g%-jt5ydb5lz30wxh+(v3$4nw
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
+STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
+STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET')
 ALLOWED_HOSTS = []
 
 
@@ -144,3 +150,8 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+# settings.py
+
+
+
+

@@ -1,6 +1,9 @@
 from datetime import timedelta
+from django.conf import settings
 
-REQUIRED_USER_FIELDS = ['email', 'phone_number', 'password']
+REQUIRED_USER_FIELDS = ['email', 'phone_number', 'password',"date_of_birth"]
+REQUIRED_USER_FIELDS_ADDRESS = ['street_address', 'city', 'state','country','postal_code']
+
 REQUIRED_USER_FIELDS_LOGIN = ['email', 'password']
 
 SIMPLE_JWT = {
@@ -11,3 +14,4 @@ SIMPLE_JWT = {
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
 }
+STRIPE_API=settings.STRIPE_SECRET_KEY
