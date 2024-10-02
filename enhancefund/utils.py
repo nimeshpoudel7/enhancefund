@@ -3,7 +3,8 @@ import stripe
 from datetime import datetime
 
 from users.models import UserAddress,User
-
+from django.conf import settings
+import os
 
 def enhance_response(data=None, message=None, status=None):
     response_data = {
@@ -15,7 +16,13 @@ def enhance_response(data=None, message=None, status=None):
 
 def create_stripe_user(serializer):
     try:
+
+
         user_email = serializer.data['email']
+        last_name = serializer.data['last_name']
+
+        first_name = serializer.data['first_name']
+
         role = serializer.data['role']
         phone = serializer.data['phone_number']
         user = User.objects.get(email=user_email)
@@ -48,14 +55,14 @@ def create_stripe_user(serializer):
                 "address": {
                     "line1": street_address,
                     "city": city,
-                    "state": "ON",
-                    "country": "CA",
-                    "postal_code": "M8Y 2R1"
+                    "state": state,
+                    "country": country,
+                    "postal_code": postal_code
                 },
                 "email": user_email,
-                "first_name": "final",
-                "last_name": "Poudel",
-                "phone": "4379552968",
+                "first_name": first_name,
+                "last_name": last_name,
+                "phone": phone,
                 "id_number": "000000000",  # Ensure this is valid
                 # "job_title": ,
                 "dob": {
@@ -65,7 +72,17 @@ def create_stripe_user(serializer):
                 },
                 "relationship":{
                     "title":role,
-                }
+                },
+                # "verification": {
+                #     "document": {
+                #         "front": dummy_stripe_file.id,
+                #         "back": dummy_stripe_file2.id
+                #     },
+                #     # "additional_document": {
+                #     #     "front": dummy_stripe_file.id,
+                #     #     "back": dummy_stripe_file2.id
+                #     # }
+                # }
             },
             business_profile={
                 "url": "www.codehimalaya.com",
@@ -85,3 +102,41 @@ def create_stripe_user(serializer):
         # Log any other exception
         print(f"Error during account creation: {str(e)}")
         raise e
+
+def stripe_document_verification_update(account_Number):
+    print(account_Number)
+    dummy_image_path = os.path.join(settings.BASE_DIR, 'enhancefund', 'cas.png')
+    dummy_image_path2 = os.path.join(settings.BASE_DIR, 'enhancefund', 'bmi2.png')
+    with open(dummy_image_path, 'rb') as dummy_file:
+        address_verification = stripe.File.create(
+            purpose='additional_verification',
+            file=dummy_file,
+            stripe_account=account_Number,
+        )
+        #
+        with open(dummy_image_path2, 'rb') as dummy_file:
+            identity_verificaton = stripe.File.create(
+                purpose='identity_document',
+                file=dummy_file,
+                stripe_account=account_Number,
+            )
+            with open(dummy_image_path2, 'rb') as dummy_file:
+                identity_verificaton2 = stripe.File.create(
+                    purpose='identity_document',
+                    file=dummy_file,
+                    stripe_account=account_Number,
+                )
+        print(identity_verificaton)
+        stripe.Account.modify(
+            account_Number,
+            individual={"verification":
+                            {"document":
+                                 {"front": identity_verificaton.id,
+                                  "back":identity_verificaton2.id
+                                 },
+                             "additional_document":{
+                                 "front": address_verification.id
+                             }
+                            }
+                        },
+        )

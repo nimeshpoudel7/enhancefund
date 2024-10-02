@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from enhancefund.commonserializer import CommonSerializer
-from .models import User, UserAddress
+from .models import User, UserAddress, UserVerification
 
 
 class UserSerializer(CommonSerializer):
@@ -65,6 +65,23 @@ class UserAddressSerializer(serializers.ModelSerializer):
         instance.postal_code = validated_data.get('postal_code', instance.postal_code)
         instance.save()
         return instance
+
+class UserVerificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserVerification
+        fields = ['verification_status']
+
+    def create(self, validated_data):
+        # Retrieve the user from context
+        user = self.context.get('user')
+
+        if not user:
+            raise serializers.ValidationError("User not found in context")
+
+        # Create the address and associate it with the user
+        return UserVerification.objects.create(user=user, **validated_data)
+
+
 
 
 

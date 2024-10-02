@@ -120,8 +120,8 @@ class CreateUserAddress(BaseAuthenticatedView,generics.CreateAPIView, BaseValida
             # If not found, create a new address
             serializer = UserAddressSerializer(data=request.data,context={"user":user})
 
-        if serializer.is_valid():
-            serializer.save()
+            if serializer.is_valid():
+                serializer.save()
             return enhance_response(data=serializer.data, status=status.HTTP_201_CREATED,
                                     message="Address created successfully")
         else:
