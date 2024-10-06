@@ -99,11 +99,19 @@ class Transaction(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     transaction_date = models.DateTimeField(auto_now_add=True)
     description = models.CharField(max_length=255, null=True, blank=True)
+    url = models.CharField(max_length=255, null=True, blank=True)
+    payment_id=models.CharField(max_length=255, null=True, blank=True)
     class Meta:
         db_table = 'transaction'
 
     def __str__(self):
-        return f"Transaction: {self.transaction_type} by {self.user.email} - {self.amount}"
+        return (
+            "{"
+            f"transaction_type: '{self.transaction_type or ''}', "
+            f"amount: '{self.amount or ''}', "
+            f"payment_id: '{self.payment_id or ''}', "
+            "}"
+        )
 class PaymentHistory(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     payment_amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -113,4 +121,10 @@ class PaymentHistory(models.Model):
         db_table = 'payment_history'
 
     def __str__(self):
-        return f"PaymentHistory: {self.user.email} - {self.payment_amount}"
+        return (
+            "{"
+            f"amount: '{self.payment_amount or ''}', "
+            f"stripe_payment_id: '{self.stripe_payment_id or ''}', "
+            f"payment_date: '{self.payment_date or ''}', "
+            "}"
+        )

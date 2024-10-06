@@ -40,6 +40,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(max_length=255,null=True, blank=True)
     last_name = models.CharField(max_length=255,null=True, blank=True)
     stripe_customer_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
+    stripe_account_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
@@ -115,5 +116,24 @@ class UserAddress(models.Model):
             f"postal_code: '{self.postal_code or ''}'"
             "}"
         )
+
+class UserBankDetails(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    account_holder_name = models.CharField(max_length=255, null=True, blank=True)
+    routing_number = models.CharField(max_length=100, null=True, blank=True)
+    account_number = models.IntegerField( null=True, blank=True)
+    account_type = models.CharField(max_length=50, null=True, blank=True)
+
+
+    class Meta:
+        db_table = 'user_bank_account'
+
+    def __str__(self):
+        return (
+            "{"
+            f"account_holder_name: '{self.account_holder_name or ''}', "
+            "}"
+        )
+
 
 

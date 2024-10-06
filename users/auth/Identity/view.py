@@ -4,7 +4,7 @@ from enhancefund.postvalidators import BaseValidator
 from enhancefund.redisserver import set_cache_value, get_value_view
 from enhancefund.rolebasedauth import BaseAuthenticatedView
 from enhancefund.utils import enhance_response, create_stripe_user, \
-    stripe_document_verification_update
+    stripe_document_verification_update, create_stripe_customer_payment
 from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework import generics
@@ -69,9 +69,13 @@ class VerificationStatus(BaseAuthenticatedView,generics.RetrieveAPIView):
 
         try:
             account=create_stripe_user(serializer)
+            customer=create_stripe_customer_payment(serializer)
+
+
             #
             stripe_document_verification_update(account.individual.account)
-            user.stripe_customer_id=account.individual.account
+            user.stripe_account_id=account.individual.account
+            user.stripe_customer_id=customer.id
             user.save()
             user = request.user
             user_id = User.objects.get(email=user)

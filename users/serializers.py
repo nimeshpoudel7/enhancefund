@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from enhancefund.commonserializer import CommonSerializer
-from .models import User, UserAddress, UserVerification
+from .models import User, UserAddress, UserVerification, UserBankDetails
 
 
 class UserSerializer(CommonSerializer):
@@ -12,7 +12,7 @@ class UserSerializer(CommonSerializer):
     class Meta:
         model = User
         fields = [ 'email', 'phone_number', 'password', 'confirm_password','role', 'status', 'stripe_customer_id',
-                  'created_at', 'updated_at','checklist','date_of_birth','first_name','last_name']
+                  'created_at', 'updated_at','checklist','date_of_birth','first_name','last_name','stripe_customer_id']
         extra_kwargs = {
             'password': {'write_only': True},
         }
@@ -80,6 +80,28 @@ class UserVerificationSerializer(serializers.ModelSerializer):
 
         # Create the address and associate it with the user
         return UserVerification.objects.create(user=user, **validated_data)
+
+
+class UserBankDetailsSerializer(CommonSerializer):
+    class Meta:
+        model = UserBankDetails
+
+        fields = ['account_number','account_holder_name','routing_number','account_type']
+    account_number = serializers.IntegerField(write_only=True, required=True)
+
+    extra_kwargs = {
+        'account_number': {'write_only': True},
+    }
+
+    def create(self, validated_data):
+        # Retrieve the user from context
+        user = self.context.get('user')
+
+        if not user:
+            raise serializers.ValidationError("User not found in context")
+
+        # Create the address and associate it with the user
+        return UserBankDetails.objects.create(user=user, **validated_data)
 
 
 

@@ -13,16 +13,23 @@ def enhance_response(data=None, message=None, status=None):
         "data": data,
     }
     return Response(response_data, status=status)
+def create_stripe_customer_payment(serializer):
+    user_email = serializer.data['email']
+    last_name = serializer.data['last_name']
+    first_name = serializer.data['first_name']
+    name=first_name+" "+last_name
+    investor_customer = stripe.Customer.create(
+        email=user_email,
+        name=name
+    )
+    return  investor_customer
+
 
 def create_stripe_user(serializer):
     try:
-
-
         user_email = serializer.data['email']
         last_name = serializer.data['last_name']
-
         first_name = serializer.data['first_name']
-
         role = serializer.data['role']
         phone = serializer.data['phone_number']
         user = User.objects.get(email=user_email)
@@ -140,3 +147,54 @@ def stripe_document_verification_update(account_Number):
                             }
                         },
         )
+
+def stripe_external_bank_account(acc_number,data):
+   stripe.Account.create_external_account(acc_number,external_account=data)
+   stripe.Account.modify(
+       acc_number,
+       tos_acceptance={"date": 1609798905, "ip": "8.8.8.8"},
+       settings={
+           'payouts': {
+               'schedule': {
+                   'interval': 'manual',  # Set to 'manual' to disable automatic payouts
+               }
+           }
+       }
+   )
+
+
+
+
+def create_payment_link_for_customer(customer_id,amount):
+    success_url = "https://yourdomain.com/payment/success"
+    cancel_url = "https://yourdomain.com/payment/cancel"
+
+
+    try:
+        checkout_session = stripe.checkout.Session.create(
+            customer=customer_id,
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': "CAD",
+                    'unit_amount': int(amount * 100),  # Convert to cents
+                    'product_data': {
+                        'name': 'Wallet Top-Up',
+                    },
+                },
+                'quantity': 1,
+            }],
+            mode='payment',
+            success_url=success_url,
+            cancel_url=cancel_url,
+        )
+        return checkout_session
+    except stripe.error.StripeError as e:
+        print(f"Error creating payment link: {str(e)}")
+        return None
+
+def check_Add_fund_status(payment_id):
+   payment_details= stripe.checkout.Session.retrieve(
+        payment_id,
+    )
+   return payment_details
