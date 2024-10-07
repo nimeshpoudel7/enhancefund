@@ -198,3 +198,8 @@ def check_Add_fund_status(payment_id):
         payment_id,
     )
    return payment_details
+
+
+def format_details(data):
+    # Wrap each value in a dictionary with key '0'
+    return {key: {"0": value} for key, value in data.items()}

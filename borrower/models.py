@@ -1,11 +1,33 @@
 from django.db import models
 from users.models import User
 
+class CreditScoreHistory(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE,null=True, blank=True)
+    risk_score = models.IntegerField()
+    average_transaction = models.FloatField()
+    credit_utilization = models.FloatField()
+    payment_consistency=models.FloatField(blank=True)
+    date_recorded = models.DateTimeField(auto_now_add=True)
+    statement_start_date = models.DateTimeField(null=True,blank=True)
+    statement_end_date = models.DateTimeField(null=True,blank=True)
+
+    class Meta:
+        db_table = 'credit_score_history'
+    def __str__(self):
+        return ( "{"
+            f"risk_score: '{self.risk_score or 100}', "
+            f"average_transaction: '{self.average_transaction or 100}', "
+            f"credit_utilization: '{self.credit_utilization or 100}', "
+            f"statement_start_date: '{self.statement_start_date or ''}', "
+            f"statement_end_date: '{self.statement_end_date or ''}', "
+                 
+            "}")
+
 class Borrower(models.Model):
     class Meta:
         db_table = 'Borrower'
-    borrower = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
-    credit_score = models.IntegerField()
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    credit = models.ForeignKey(CreditScoreHistory, on_delete=models.CASCADE)
     bank_statement_url = models.CharField(max_length=255)
     loan_purpose = models.CharField(max_length=255)
     EMPLOYMENT_CHOICES = [
@@ -21,12 +43,3 @@ class Borrower(models.Model):
 
     def __str__(self):
         return f"Borrower: {self.borrower.email}"
-class CreditScoreHistory(models.Model):
-    borrower = models.ForeignKey(Borrower, on_delete=models.CASCADE)
-    credit_score = models.IntegerField()
-    date_recorded = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        db_table = 'credit_score_history'
-    def __str__(self):
-        return f"Credit Score History: {self.borrower.borrower.email} - {self.credit_score}"
