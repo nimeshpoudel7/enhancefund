@@ -198,3 +198,16 @@ def check_Add_fund_status(payment_id):
         payment_id,
     )
    return payment_details
+
+def transfer_funds(amount, connected_account_id):
+    try:
+        transfer = stripe.Transfer.create(
+            amount=int(amount * 100),
+            currency="CAD",
+            destination=connected_account_id,
+            description="Transfer to connected account"
+        )
+        return transfer
+    except Exception as e:
+        print(f"Error during transfer: {e}")
+        return None

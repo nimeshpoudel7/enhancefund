@@ -5,7 +5,7 @@ from enhancefund.postvalidators import BaseValidator
 from enhancefund.rolebasedauth import  BaseInvestorView
 from rest_framework import generics
 
-from enhancefund.utils import enhance_response, create_payment_link_for_customer, check_Add_fund_status
+from enhancefund.utils import enhance_response, create_payment_link_for_customer, check_Add_fund_status, transfer_funds
 from investor.models import InvestorBalance
 from investor.serializers import PaymentHistorySerializer, TransactionSerializer, InvestorBalanceSerializer
 from loans.models import PaymentHistory, Transaction
@@ -137,6 +137,50 @@ class WalletBalance(BaseInvestorView,BaseValidator,generics.RetrieveAPIView):
                 message="No wallet balance found for this user",
                 status=status.HTTP_404_NOT_FOUND
             )
+
+
+
+
+
+class WithdrawBalance(BaseInvestorView,BaseValidator,generics.CreateAPIView):
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        try:
+            validation_errors = self.validate_data(request.data, REQUIRED_ADD_FUND_FIELDS)
+            if validation_errors:
+                return enhance_response(data=validation_errors, status=status.HTTP_400_BAD_REQUEST,
+                                        message="Please enter required fields")
+
+            investor_balance = InvestorBalance.objects.filter(user=user.id).first()
+            requested_amount=request.data.get("amount")
+            print(investor_balance)
+            if investor_balance.account_balance<requested_amount:
+                return enhance_response(
+                    data={},
+                    message="In sufficient balance",
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            stripe_response=transfer_funds(requested_amount,user.stripe_account_id)
+
+
+
+
+
+
+
+        except :
+            print("ee")
+
+
+
+
+
+
+
+
+
+
+
 
 
 
