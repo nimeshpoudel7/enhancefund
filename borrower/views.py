@@ -6,8 +6,8 @@ import io
 
 from borrower.credit_utils import load_and_preprocess_data, calculate_risk_score
 from borrower.models import Borrower, CreditScoreHistory
-from borrower.serializer import CreditScoreHistorySerializer
-from enhancefund.Constant import REQUIRED_ADD_FUND_FIELDS
+from borrower.serializer import CreditScoreHistorySerializer, BorrowerSerializer
+from enhancefund.Constant import REQUIRED_CREATE_LOAN_FIELD
 from enhancefund.postvalidators import BaseValidator
 from enhancefund.rolebasedauth import BaseInvestorView, BaseBorrowerView
 from rest_framework import generics
@@ -115,3 +115,35 @@ class CreditStatementAnalysis(BaseBorrowerView,BaseValidator,generics.GenericAPI
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 message=f"Error processing file: {str(e)}"
             )
+
+class CreateLoan(BaseBorrowerView,BaseValidator,generics.CreateAPIView):
+    def post(self, request, *args, **kwargs):
+        print("hello")
+        validation_errors = self.validate_data(request.data, REQUIRED_CREATE_LOAN_FIELD)
+        if validation_errors:
+            return enhance_response(data=validation_errors, status=status.HTTP_400_BAD_REQUEST,
+                                    message="Please enter required fields")
+        user = request.user
+        user_id = User.objects.get(email=user.email)
+        print(user.id)
+        # extract credit
+        user_credit = CreditScoreHistory.objects.filter(user=user).order_by(
+                '-date_recorded').first()
+        print(user_credit.id)
+        print(request.data.get("employment_status"))
+        data_to_send={
+            "bank_statement_url":"null",
+            "loan_purpose":request.data.get("loan_purpose"),
+            "employment_status":request.data.get("employment_status"),
+            "annual_income": request.data.get("annual_income"),
+            "account_balance":0
+        }
+        serializer = BorrowerSerializer(data=data_to_send, context={"user": user_id,"credit":user_credit})
+        if serializer.is_valid():
+            serializer.save()
+        print(serializer.errors)
+        print(serializer)
+
+        # CALCULATE INTEREST RATE AND ALSO HOW MUCH THE BORROWER WILL PAY ACC. TO TERM MONTHS
+        return enhance_response(data={}, status=status.HTTP_200_OK,
+                                    message="Your loan is created successfully")
