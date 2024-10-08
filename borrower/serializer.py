@@ -9,13 +9,13 @@ class CreditScoreHistorySerializer(CommonSerializer):
 
     def create(self, validated_data):
         # Retrieve the user from context
-        user = self.context.get('user')
+        borrower = self.context.get('borrower')
 
-        if not user:
-            raise CommonSerializer.ValidationError("User not found in context")
+        if not borrower:
+            raise CommonSerializer.ValidationError("borrower not found in context")
 
         # Create the address and associate it with the user
-        return CreditScoreHistory.objects.create(user=user, **validated_data)
+        return CreditScoreHistory.objects.create(borrower=borrower, **validated_data)
     def update(self, instance, validated_data):
         # Update the address instance
         instance.risk_score = validated_data.get('risk_score', instance.risk_score)
@@ -34,16 +34,15 @@ class CreditScoreHistorySerializer(CommonSerializer):
 class BorrowerSerializer(CommonSerializer):
     class Meta:
         model = Borrower
-        fields = ['loan_purpose','annual_income', 'employment_status']
+        fields = ['annual_income', 'employment_status','account_balance']
 
     def create(self, validated_data):
         # Retrieve the user from context
         user = self.context.get('user')
-        credit = self.context.get('credit')
 
 
         if not user:
             raise CommonSerializer.ValidationError("User not found in context")
 
         # Create the address and associate it with the user
-        return Borrower.objects.create(user=user,credit=credit, **validated_data)
+        return Borrower.objects.create(user=user, **validated_data)

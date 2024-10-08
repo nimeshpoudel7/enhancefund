@@ -75,6 +75,8 @@ class CreditStatementAnalysis(BaseBorrowerView,BaseValidator,generics.GenericAPI
             # insert into db credit history
             user = request.user
             user_id = User.objects.get(email=user.email)
+            borrower_id = Borrower.objects.get(user=user)
+
 
             flattened_details = {key: list(inner_dict.values())[0] for key, inner_dict in features.to_dict().items()}
 
@@ -88,7 +90,7 @@ class CreditStatementAnalysis(BaseBorrowerView,BaseValidator,generics.GenericAPI
             # Add the transformed details back to the data
             print(flattened_details)
             # if user_credit_history is None:
-            serializer = CreditScoreHistorySerializer(data=flattened_details,context={"user": user})
+            serializer = CreditScoreHistorySerializer(data=flattened_details,context={"borrower": borrower_id})
             if serializer.is_valid():
                 serializer.save()
                 user.checklist = ['CREDIT_STATEMENT']  # Add 'BANK_ACCOUNT' to the user's checklist
@@ -116,33 +118,32 @@ class CreditStatementAnalysis(BaseBorrowerView,BaseValidator,generics.GenericAPI
                 message=f"Error processing file: {str(e)}"
             )
 
-class CreateLoan(BaseBorrowerView,BaseValidator,generics.CreateAPIView):
+class CreateBorrower(BaseBorrowerView, BaseValidator, generics.CreateAPIView):
     def post(self, request, *args, **kwargs):
-        print("hello")
         validation_errors = self.validate_data(request.data, REQUIRED_CREATE_LOAN_FIELD)
         if validation_errors:
             return enhance_response(data=validation_errors, status=status.HTTP_400_BAD_REQUEST,
                                     message="Please enter required fields")
         user = request.user
         user_id = User.objects.get(email=user.email)
-        print(user.id)
-        # extract credit
-        user_credit = CreditScoreHistory.objects.filter(user=user).order_by(
-                '-date_recorded').first()
-        print(user_credit.id)
-        print(request.data.get("employment_status"))
+        borrowerDetails = Borrower.objects.filter(user=user_id).first()
+        if borrowerDetails is not None:
+            return enhance_response(data={}, status=status.HTTP_400_BAD_REQUEST,
+                                    message="You have already borrower account")
+
         data_to_send={
             "bank_statement_url":"null",
-            "loan_purpose":request.data.get("loan_purpose"),
             "employment_status":request.data.get("employment_status"),
             "annual_income": request.data.get("annual_income"),
             "account_balance":0
         }
-        serializer = BorrowerSerializer(data=data_to_send, context={"user": user_id,"credit":user_credit})
+        serializer = BorrowerSerializer(data=data_to_send, context={"user": user_id})
         if serializer.is_valid():
             serializer.save()
-        print(serializer.errors)
-        print(serializer)
+        else:
+            return enhance_response(data={}, status=status.HTTP_400_BAD_REQUEST,
+                                    message="Invalid data")
+
 
         # CALCULATE INTEREST RATE AND ALSO HOW MUCH THE BORROWER WILL PAY ACC. TO TERM MONTHS
         return enhance_response(data={}, status=status.HTTP_200_OK,
