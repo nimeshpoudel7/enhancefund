@@ -106,6 +106,10 @@ DATABASES = {
         'PASSWORD': '#Lambtoncollege2024', # Replace with your PostgreSQL password
         'HOST': 'aws-0-us-west-1.pooler.supabase.com',        # Replace with your database host (default is 'localhost')
         'PORT': '6543',             # Replace with your database port (default is '5432')
+        'OPTIONS': {
+            'gssencmode': 'disable',  # Disable GSSAPI encryption
+            'sslmode': 'require',  # SSL might be required by Supabase
+        },
     }
 }
 

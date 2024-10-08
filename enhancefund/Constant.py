@@ -7,6 +7,8 @@ REQUIRED_ADD_FUND_FIELDS = ['amount']
 
 
 REQUIRED_USER_FIELDS_LOGIN = ['email', 'password']
+REQUIRED_CREATE_LOAN_FIELD= ['loan_purpose', 'employment_status','annual_income','amount','term_months']
+
 REQUIRED_BANK_ACCOUNT_FIELD=['account_holder_name','routing_number','account_number','account_type']
 
 SIMPLE_JWT = {

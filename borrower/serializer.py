@@ -1,4 +1,4 @@
-from borrower.models import CreditScoreHistory
+from borrower.models import CreditScoreHistory, Borrower
 from enhancefund.commonserializer import CommonSerializer
 
 
@@ -29,3 +29,21 @@ class CreditScoreHistorySerializer(CommonSerializer):
 
         instance.save()
         return instance
+
+
+class BorrowerSerializer(CommonSerializer):
+    class Meta:
+        model = Borrower
+        fields = ['loan_purpose','annual_income', 'employment_status']
+
+    def create(self, validated_data):
+        # Retrieve the user from context
+        user = self.context.get('user')
+        credit = self.context.get('credit')
+
+
+        if not user:
+            raise CommonSerializer.ValidationError("User not found in context")
+
+        # Create the address and associate it with the user
+        return Borrower.objects.create(user=user,credit=credit, **validated_data)
