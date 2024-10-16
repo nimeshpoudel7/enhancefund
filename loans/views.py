@@ -7,12 +7,15 @@ from enhancefund.Constant import REQUIRED_CREATE_LOAN_FIELD, REQUIRED_CREATE_INV
 from enhancefund.postvalidators import BaseValidator
 from enhancefund.rolebasedauth import BaseBorrowerView, BaseInvestorView
 from enhancefund.utils import enhance_response
+from investor.models import InvestorBalance
+from investor.serializers import TransactionSerializer
 from loans.models import LoanApplication, Loan, LoanRepaymentSchedule, Investment
 from loans.serializers import LoanSerializer, SchedulerSerializer, InvestmentSerializer
 from users.models import User
 from rest_framework import status
 from rest_framework import generics
 from django.db import models
+from datetime import date, timedelta
 
 class CreateLoan(BaseBorrowerView, BaseValidator, generics.CreateAPIView):
     def calculate_interest_rate(self, payment_frequency):
@@ -221,6 +224,33 @@ class loanList(BaseValidator, generics.ListAPIView):
 class createInvestment(BaseInvestorView, BaseValidator, generics.CreateAPIView):
     serializer_class = InvestmentSerializer
 
+    def update_due_dates(self, loan_id):
+        repayment_details = LoanRepaymentSchedule.objects.filter(loan=loan_id)
+        num_installments = len(repayment_details)
+        start_date = date.today()  # Assuming the loan starts today, adjust as needed
+
+        # Determine EMI frequency based on number of installments
+        if num_installments == 1:
+            emi_frequency = 'one_time'
+        elif num_installments == 4:
+            emi_frequency = '3_monthly'
+        elif num_installments == 12:
+            emi_frequency = 'monthly'
+        else:
+            raise ValueError(f"Unsupported number of installments: {num_installments}")
+
+        for index, repayment in enumerate(repayment_details):
+            if emi_frequency == 'monthly':
+                due_date = start_date + timedelta(days=(index + 1) * 30)
+            elif emi_frequency == '3_monthly':
+                due_date = start_date + timedelta(days=(index + 1) * 90)
+            elif emi_frequency == 'one_time':
+                due_date = start_date + timedelta(days=30)  # Assuming one-time payment is due in 30 days
+
+            repayment.due_date = due_date
+            repayment.save()
+
+
     def post(self, request, *args, **kwargs):
         # Validate the required fields
         validation_errors = self.validate_data(request.data, REQUIRED_CREATE_INVESTMENT_FIELD)
@@ -232,10 +262,12 @@ class createInvestment(BaseInvestorView, BaseValidator, generics.CreateAPIView):
         user_id = User.objects.get(email=user.email)
         loan_id = request.data.get("loan")
         invest_amount = request.data.get("amount")
+        borrower_balance=0
 
         # Check if loan exists
         try:
             loan_details = Loan.objects.get(id=loan_id)
+
         except Loan.DoesNotExist:
             return enhance_response(
                 data={},
@@ -250,10 +282,11 @@ class createInvestment(BaseInvestorView, BaseValidator, generics.CreateAPIView):
                 message="Loan is already fulfilled",
                 status=status.HTTP_400_BAD_REQUEST
             )
-
         # Calculate the total amount already invested in the loan
         total_invested = Investment.objects.filter(loan=loan_details).aggregate(total=models.Sum('amount'))['total'] or 0
         remaining_amount = loan_details.amount - total_invested
+        borrower_details=Borrower.objects.get(user=loan_details.borrower.user)
+
         print(remaining_amount,"remaining_amount")
         if invest_amount > remaining_amount:
             return enhance_response(
@@ -269,7 +302,39 @@ class createInvestment(BaseInvestorView, BaseValidator, generics.CreateAPIView):
             serializer = InvestmentSerializer(data=data, context={'investor': user, 'loan': loan_details})
             if serializer.is_valid():
                 serializer.save()
-                # todo: create fulfil deduct balance from investor and also repayment due date start
+
+                new_total_invested = Investment.objects.filter(loan=loan_details).aggregate(total=Sum('amount'))[
+                                         'total'] or 0
+                remaining_amount = loan_details.amount - new_total_invested
+                if remaining_amount==0:
+                    to_serialize_data = {
+                        "transaction_type": "deposit",
+                        "amount": invest_amount,
+                        "payment_id": "internal"
+                    }
+                    loan_details.is_fulfill=True
+                    loan_details.status='approved'
+                    loan_details.save()
+                    self.update_due_dates(loan_id)
+                    borrower_details.account_balance=float(borrower_details.account_balance+loan_details.amount)
+                    borrower_details.save()
+                    serializerTransactionBorrower = TransactionSerializer(data=to_serialize_data, context={"user": user_id})
+                    serializerTransactionBorrower.is_valid()
+                    serializerTransactionBorrower.save()
+                investor_balance = InvestorBalance.objects.get(user=user_id)
+                investor_balance.account_balance=investor_balance.account_balance-invest_amount
+                investor_balance.save()
+                to_serialize_data = {
+                    "transaction_type": "investment",
+                    "amount": invest_amount,
+                    "payment_id": "internal"
+                }
+                serializerTransaction = TransactionSerializer(data=to_serialize_data, context={"user": user_id})
+                serializerTransaction.is_valid()
+                serializerTransaction.save()
+                # and also create transaction
+
+
 
                 return enhance_response(
                     data=serializer.data,
