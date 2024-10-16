@@ -1,4 +1,3 @@
-from lib2to3.fixes.fix_input import context
 
 import pdfplumber
 from django.shortcuts import render
@@ -7,7 +6,7 @@ import io
 from borrower.credit_utils import load_and_preprocess_data, calculate_risk_score
 from borrower.models import Borrower, CreditScoreHistory
 from borrower.serializer import CreditScoreHistorySerializer, BorrowerSerializer
-from enhancefund.Constant import REQUIRED_CREATE_LOAN_FIELD
+from enhancefund.Constant import REQUIRED_CREATE_BORROWER_FIELD
 from enhancefund.postvalidators import BaseValidator
 from enhancefund.rolebasedauth import BaseInvestorView, BaseBorrowerView
 from rest_framework import generics
@@ -120,7 +119,7 @@ class CreditStatementAnalysis(BaseBorrowerView,BaseValidator,generics.GenericAPI
 
 class CreateBorrower(BaseBorrowerView, BaseValidator, generics.CreateAPIView):
     def post(self, request, *args, **kwargs):
-        validation_errors = self.validate_data(request.data, REQUIRED_CREATE_LOAN_FIELD)
+        validation_errors = self.validate_data(request.data, REQUIRED_CREATE_BORROWER_FIELD)
         if validation_errors:
             return enhance_response(data=validation_errors, status=status.HTTP_400_BAD_REQUEST,
                                     message="Please enter required fields")
@@ -145,6 +144,6 @@ class CreateBorrower(BaseBorrowerView, BaseValidator, generics.CreateAPIView):
                                     message="Invalid data")
 
 
-        # CALCULATE INTEREST RATE AND ALSO HOW MUCH THE BORROWER WILL PAY ACC. TO TERM MONTHS
         return enhance_response(data={}, status=status.HTTP_200_OK,
                                     message="Your loan is created successfully")
+

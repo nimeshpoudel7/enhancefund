@@ -123,6 +123,7 @@ class WalletBalance(BaseInvestorView,BaseValidator,generics.RetrieveAPIView):
 
     def get(self, request, *args, **kwargs):
         user = request.user
+
         try:
             investor_balance = InvestorBalance.objects.get(user=user)
             serializer = self.get_serializer(investor_balance)
