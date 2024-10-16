@@ -18,7 +18,12 @@ class Borrower(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Borrower: {self.borrower.email}"
+        return ("{"
+                f"user: '{self.user }', "
+                f"employment_status: '{self.employment_status }', "
+                f"account_balance: '{self.account_balance or 0}', "
+                f"annual_income: '{self.annual_income or ''}', "
+                "}")
 
 
 class CreditScoreHistory(models.Model):

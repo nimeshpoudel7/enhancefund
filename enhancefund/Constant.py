@@ -7,7 +7,11 @@ REQUIRED_ADD_FUND_FIELDS = ['amount']
 
 
 REQUIRED_USER_FIELDS_LOGIN = ['email', 'password']
-REQUIRED_CREATE_LOAN_FIELD= [ 'employment_status','annual_income']
+REQUIRED_CREATE_BORROWER_FIELD= ['employment_status', 'annual_income']
+REQUIRED_CREATE_LOAN_FIELD= ['amount', 'term_months','loan_purpose']
+REQUIRED_CREATE_INVESTMENT_FIELD= ['amount','loan']
+
+
 
 REQUIRED_BANK_ACCOUNT_FIELD=['account_holder_name','routing_number','account_number','account_type']
 
