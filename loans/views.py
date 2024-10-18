@@ -16,9 +16,11 @@ from rest_framework import status
 from rest_framework import generics
 from django.db import models
 from datetime import date, timedelta
+from decimal import Decimal
 
 class CreateLoan(BaseBorrowerView, BaseValidator, generics.CreateAPIView):
     def calculate_interest_rate(self, payment_frequency):
+
         base_rate = 10.0  # Base interest rate
         frequency_rates = {
             'monthly': 0,
@@ -93,16 +95,9 @@ class CreateLoan(BaseBorrowerView, BaseValidator, generics.CreateAPIView):
 
         number_of_payments = self.calculate_number_of_payments(term_months, payment_frequency)
         print(number_of_payments)
-        data_to_send={
-            "amount":amount,
-            "loan_purpose":request.data.get("loan_purpose"),
-            "term_months": term_months,
-            "status":'processing',
-            "interest_rate":interest_rate,
-            "total_payable":total_payable
-        }
         data_to_send = {
             "amount": amount,
+            "loan_amount":amount*0.97,
             "loan_purpose": request.data.get("loan_purpose"),
             "term_months": term_months,
             "status": 'processing',
@@ -316,7 +311,7 @@ class createInvestment(BaseInvestorView, BaseValidator, generics.CreateAPIView):
                     loan_details.status='approved'
                     loan_details.save()
                     self.update_due_dates(loan_id)
-                    borrower_details.account_balance=float(borrower_details.account_balance+loan_details.amount)
+                    borrower_details.account_balance=float(borrower_details.account_balance+loan_details.loan_amount)
                     borrower_details.save()
                     serializerTransactionBorrower = TransactionSerializer(data=to_serialize_data, context={"user": user_id})
                     serializerTransactionBorrower.is_valid()
@@ -333,8 +328,6 @@ class createInvestment(BaseInvestorView, BaseValidator, generics.CreateAPIView):
                 serializerTransaction.is_valid()
                 serializerTransaction.save()
                 # and also create transaction
-
-
 
                 return enhance_response(
                     data=serializer.data,
@@ -356,3 +349,45 @@ class createInvestment(BaseInvestorView, BaseValidator, generics.CreateAPIView):
                 message=f"An error occurred: {str(e)}",
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class expectedReturn(BaseInvestorView, BaseValidator, generics.RetrieveAPIView):
+    queryset = Loan.objects.all()
+    serializer_class = LoanSerializer
+
+    def get(self, request, *args, **kwargs):
+        loan_id = float(request.query_params.get('loan_id'))
+        amount = Decimal(request.query_params.get('amount'))  # Convert to Decimal
+        year = Decimal(request.query_params.get('year'))  # Convert to Decimal
+
+        user = request.user
+        user_id = User.objects.get(email=user.email)
+
+        # Check if loan exists
+        try:
+            loan_details = Loan.objects.get(id=loan_id)
+            interest_rate = Decimal(loan_details.interest_rate) * Decimal(0.97)
+
+            # Perform the calculation using Decimal for precision
+            future_value = amount * (1 + (interest_rate * year / Decimal(100)))
+            print(interest_rate, "aaa")
+            data_to_send={
+                'amount':amount,
+                'net_return':future_value,
+                'interest_rate':interest_rate
+            }
+            return enhance_response(
+                data=data_to_send,
+                message="Data fetch successfully",
+                status=status.HTTP_200_OK
+            )
+
+
+
+        except Loan.DoesNotExist:
+            return enhance_response(
+                data={},
+                message="Loan not found",
+                status=status.HTTP_404_NOT_FOUND
+            )
+

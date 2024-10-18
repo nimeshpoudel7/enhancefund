@@ -18,6 +18,9 @@ class Loan(models.Model):
     interest_rate = models.DecimalField(max_digits=5, decimal_places=2)
     total_payable = models.DecimalField(max_digits=10, decimal_places=2)
     is_fulfill = models.BooleanField(default=False)
+
+    loan_amount = models.DecimalField(max_digits=10, decimal_places=2,null=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -33,7 +36,8 @@ class Loan(models.Model):
             f"interest_rate: '{self.interest_rate or ''}', "
             f"total_payable: '{self.total_payable or ''}', "
             f"is_fulfill: '{self.is_fulfill}', "
-            
+            f"loan_amount: '{self.loan_amount}', "
+
             
             
             "}")
@@ -42,6 +46,7 @@ class Investment(models.Model):
     loan = models.ForeignKey(Loan, on_delete=models.CASCADE)
     investor = models.ForeignKey(User, on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    net_return = models.DecimalField(max_digits=10, decimal_places=2,null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:

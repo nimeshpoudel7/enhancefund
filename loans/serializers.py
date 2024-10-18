@@ -5,7 +5,7 @@ from loans.models import Loan, LoanRepaymentSchedule, Investment
 class LoanSerializer(CommonSerializer):
     class Meta:
         model = Loan
-        fields = ['id','amount','term_months','status','loan_purpose','interest_rate','total_payable','is_fulfill']
+        fields = ['id','amount','term_months','status','loan_purpose','interest_rate','total_payable','is_fulfill','loan_amount']
 
     def create(self, validated_data):
         # Retrieve the user from context
@@ -36,7 +36,7 @@ class SchedulerSerializer(CommonSerializer):
 class InvestmentSerializer(CommonSerializer):
     class Meta:
         model = Investment
-        fields = ['loan', 'investor', 'amount', 'created_at']
+        fields = ['loan', 'investor', 'amount', 'created_at','net_return']
         read_only_fields = ['created_at', 'investor']  # Make investor read-only
 
     def create(self, validated_data):
@@ -51,6 +51,7 @@ class InvestmentSerializer(CommonSerializer):
         investment = Investment.objects.create(
             loan=loan,
             investor=investor,
+            net_return=validated_data['net_return'],
             amount=validated_data['amount']
         )
         return investment

@@ -1,11 +1,13 @@
 from django.shortcuts import render
 
+from borrower.models import Borrower
 from enhancefund.Constant import REQUIRED_ADD_FUND_FIELDS
 from enhancefund.postvalidators import BaseValidator
-from enhancefund.rolebasedauth import  BaseInvestorView
+from enhancefund.rolebasedauth import BaseInvestorView, BaseAuthenticatedView
 from rest_framework import generics
 
-from enhancefund.utils import enhance_response, create_payment_link_for_customer, check_Add_fund_status
+from enhancefund.utils import enhance_response, create_payment_link_for_customer, check_Add_fund_status, transfer_funds, \
+    create_payout
 from investor.models import InvestorBalance
 from investor.serializers import PaymentHistorySerializer, TransactionSerializer, InvestorBalanceSerializer
 from loans.models import PaymentHistory, Transaction
@@ -138,6 +140,65 @@ class WalletBalance(BaseInvestorView,BaseValidator,generics.RetrieveAPIView):
                 message="No wallet balance found for this user",
                 status=status.HTTP_404_NOT_FOUND
             )
+
+class WithdrawBalance(BaseAuthenticatedView,BaseValidator,generics.CreateAPIView):
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        try:
+            validation_errors = self.validate_data(request.data, REQUIRED_ADD_FUND_FIELDS)
+            if validation_errors:
+                return enhance_response(data=validation_errors, status=status.HTTP_400_BAD_REQUEST,
+                                        message="Please enter required fields")
+            user_balance=0
+            print(user.role)
+            if user.role=="borrower":
+                user_balance = Borrower.objects.filter(user=user.id).first()
+            else:
+                user_balance = InvestorBalance.objects.filter(user=user.id).first()
+
+
+            requested_amount=request.data.get("amount")
+            print(user_balance)
+            if user_balance.account_balance<requested_amount:
+                return enhance_response(
+                    data={},
+                    message="In sufficient balance",
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            stripe_response=create_payout(requested_amount,user.stripe_account_id)
+            stripe_response_transfer=transfer_funds(requested_amount,user.stripe_account_id)
+            if user.role == "borrower":
+                borrower_details = Borrower.objects.filter(user=user.id).first()
+                borrower_details.account_balance=float(borrower_details.account_balance-requested_amount)
+                borrower_details.save()
+            else:
+                investor_details = InvestorBalance.objects.filter(user=user.id).first()
+                investor_details.account_balance = float(investor_details.account_balance - requested_amount)
+                investor_details.save()
+                user_id = User.objects.get(email=user.email)
+
+            to_serialize_data = {
+                "transaction_type": "withdrawal",
+                "amount": requested_amount,
+                "payment_id": "internal"
+            }
+            serializerTransactionBorrower = TransactionSerializer(data=to_serialize_data, context={"user": user_id})
+            serializerTransactionBorrower.is_valid()
+            serializerTransactionBorrower.save()
+            return enhance_response(
+                    message="Withdraw is completed",
+                    status=status.HTTP_200_OK
+                )
+            print(stripe_response)
+        except:
+            return enhance_response(
+                data={},
+                message="Something went wrong",
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+
 
 
 

@@ -203,3 +203,34 @@ def check_Add_fund_status(payment_id):
 def format_details(data):
     # Wrap each value in a dictionary with key '0'
     return {key: {"0": value} for key, value in data.items()}
+
+
+def transfer_funds(amount, connected_account_id):
+    try:
+        transfer = stripe.Transfer.create(
+            amount=int(amount * 100),
+            currency="CAD",
+            destination=connected_account_id,
+            description="Transfer to connected account"
+        )
+        return transfer
+    except Exception as e:
+        print(f"Error during transfer: {e}")
+        return None
+
+
+def create_payout(amount, connected_account_id):
+    try:
+        payout = stripe.Payout.create(
+            amount=int(amount * 100),  # Amount in cents
+            currency='CAD',
+            stripe_account=connected_account_id  # The connected account's ID
+        )
+        return payout
+    except stripe.error.StripeError as e:
+        return str(e)
+
+
+
+
+
