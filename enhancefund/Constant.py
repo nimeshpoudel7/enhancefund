@@ -10,6 +10,8 @@ REQUIRED_USER_FIELDS_LOGIN = ['email', 'password']
 REQUIRED_CREATE_BORROWER_FIELD= ['employment_status', 'annual_income']
 REQUIRED_CREATE_LOAN_FIELD= ['amount', 'term_months','loan_purpose']
 REQUIRED_CREATE_INVESTMENT_FIELD= ['amount','loan']
+REQUIRED_LOAN_REPAYMENT_FIELD= ['loan_id','repayment_id']
+
 
 
 

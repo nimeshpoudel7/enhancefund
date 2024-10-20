@@ -1,21 +1,24 @@
 import math
 
+from dateutil.relativedelta import relativedelta
 from django.db.models import Sum
+from django.utils import timezone
 
 from borrower.models import Borrower
-from enhancefund.Constant import REQUIRED_CREATE_LOAN_FIELD, REQUIRED_CREATE_INVESTMENT_FIELD
+from enhancefund.Constant import REQUIRED_CREATE_LOAN_FIELD, REQUIRED_CREATE_INVESTMENT_FIELD, \
+    REQUIRED_LOAN_REPAYMENT_FIELD
 from enhancefund.postvalidators import BaseValidator
 from enhancefund.rolebasedauth import BaseBorrowerView, BaseInvestorView
-from enhancefund.utils import enhance_response
+from enhancefund.utils import enhance_response, create_payment_link_for_customer, check_Add_fund_status
 from investor.models import InvestorBalance
-from investor.serializers import TransactionSerializer
-from loans.models import LoanApplication, Loan, LoanRepaymentSchedule, Investment
-from loans.serializers import LoanSerializer, SchedulerSerializer, InvestmentSerializer
+from investor.serializers import TransactionSerializer, PaymentHistorySerializer
+from loans.models import LoanApplication, Loan, LoanRepaymentSchedule, Investment, PaymentHistory, Transaction
+from loans.serializers import LoanSerializer, SchedulerSerializer, InvestmentSerializer, EmiSerializer
 from users.models import User
 from rest_framework import status
 from rest_framework import generics
 from django.db import models
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from decimal import Decimal
 
 class CreateLoan(BaseBorrowerView, BaseValidator, generics.CreateAPIView):
@@ -292,8 +295,15 @@ class createInvestment(BaseInvestorView, BaseValidator, generics.CreateAPIView):
 
         # If everything is valid, create the investment
         try:
+            start_date = date.today()
+            closed_date = start_date + relativedelta(months=loan_details.term_months)
+            # Add this line to convert date to datetime:
+            closed_datetime = datetime.combine(closed_date, datetime.min.time())
+
             data = request.data.copy()
             data['loan'] = loan_id
+            data['closed_at'] = closed_datetime
+
             serializer = InvestmentSerializer(data=data, context={'investor': user, 'loan': loan_details})
             if serializer.is_valid():
                 serializer.save()
@@ -324,11 +334,10 @@ class createInvestment(BaseInvestorView, BaseValidator, generics.CreateAPIView):
                     "amount": invest_amount,
                     "payment_id": "internal"
                 }
+
                 serializerTransaction = TransactionSerializer(data=to_serialize_data, context={"user": user_id})
                 serializerTransaction.is_valid()
                 serializerTransaction.save()
-                # and also create transaction
-
                 return enhance_response(
                     data=serializer.data,
                     message="Investment created successfully",
@@ -391,3 +400,405 @@ class expectedReturn(BaseInvestorView, BaseValidator, generics.RetrieveAPIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+class myInvestment(BaseInvestorView, BaseValidator, generics.RetrieveAPIView):
+    queryset = Loan.objects.all()
+    serializer_class = LoanSerializer
+
+    def get(self, request, *args, **kwargs):
+
+        user = request.user
+
+        # Check if loan exists
+        try:
+            loans = Investment.objects.filter(investor=user.id)
+            data_to_send = []
+            # data_to_send={
+            #     'data':loans,
+            # }
+            for investment in loans:
+                loan_data = {
+                    'loan_id': investment.loan.id,
+                    'loan_amount': investment.loan.amount,
+                    'loan purpose':investment.loan.loan_purpose,
+
+
+                    # 'loan_interest_rate':,
+                }
+                interest_rate = Decimal(investment.loan.interest_rate) * Decimal(0.97)
+                borrower_details = {
+                    'first Name':investment.loan.borrower.user.first_name,
+                    'Last Nme':investment.loan.borrower.user.last_name
+                 }
+                print()
+                data_to_send.append({
+                    'id': investment.id,
+                    'investor_id': investment.investor.id,
+                    'amount': investment.amount,
+                    'net_return': investment.net_return,
+                    'created_at': investment.created_at,
+                    'interest_rate':interest_rate,
+                    'status': investment.status,
+                    'close_date': investment.closed_at,
+                    'loan': loan_data,
+                    'borrower_details':borrower_details
+                })
+
+            return enhance_response(
+                data=data_to_send,
+                message="Data fetch successfully",
+                status=status.HTTP_200_OK
+            )
+
+
+
+        except Loan.DoesNotExist:
+            return enhance_response(
+                data={},
+                message="Loan not found",
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+
+class PortfolioValue(BaseInvestorView, BaseValidator, generics.RetrieveAPIView):
+    queryset = Investment.objects.all()
+    serializer_class = InvestmentSerializer
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+
+        try:
+            # Get all investments for the user
+            investments = Investment.objects.filter(investor=user.id)
+
+            # Initialize portfolio metrics
+            portfolio_metrics = {
+                'total_invested': Decimal('0.00'),
+                'total_expected_return': Decimal('0.00'),
+                'total_actual_return': Decimal('0.00'),
+                'portfolio_value': Decimal('0.00'),
+                'total_loans': 0,
+                'investments_by_loan_purpose': {},
+                'investment_history': []
+            }
+
+            # Get unique loan purposes
+            unique_loans = set()
+
+            # Calculate portfolio metrics
+            for investment in investments:
+                # Add to total invested
+                portfolio_metrics['total_invested'] += investment.amount
+
+                # Calculate returns
+                interest_rate = Decimal(investment.loan.interest_rate) * Decimal('0.97')
+                if investment.net_return:
+                    portfolio_metrics['total_actual_return'] += investment.net_return
+                else:
+                    expected_return = investment.amount * (interest_rate / Decimal('100'))
+                    portfolio_metrics['total_expected_return'] += expected_return
+
+                # Track unique loans
+                unique_loans.add(investment.loan.id)
+
+                # Group by loan purpose
+                loan_purpose = investment.loan.loan_purpose
+                if loan_purpose not in portfolio_metrics['investments_by_loan_purpose']:
+                    portfolio_metrics['investments_by_loan_purpose'][loan_purpose] = {
+                        'total_amount': Decimal('0.00'),
+                        'count': 0
+                    }
+                portfolio_metrics['investments_by_loan_purpose'][loan_purpose]['total_amount'] += investment.amount
+                portfolio_metrics['investments_by_loan_purpose'][loan_purpose]['count'] += 1
+
+                # Add to investment history
+                portfolio_metrics['investment_history'].append({
+                    'date': investment.created_at,
+                    'amount': investment.amount,
+                    'loan_purpose': loan_purpose,
+                    'interest_rate': interest_rate,
+                    'net_return': investment.net_return
+                })
+
+            # Calculate final portfolio value
+            portfolio_metrics['portfolio_value'] = (
+                    portfolio_metrics['total_invested'] +
+                    portfolio_metrics['total_actual_return'] +
+                    portfolio_metrics['total_expected_return']
+            )
+
+            # Calculate total number of loans
+            portfolio_metrics['total_loans'] = len(unique_loans)
+
+            # Format decimal values to 2 decimal places
+            for key in ['total_invested', 'total_expected_return', 'total_actual_return', 'portfolio_value']:
+                portfolio_metrics[key] = float(portfolio_metrics[key].quantize(Decimal('0.01')))
+
+            # Format loan purpose metrics
+            for purpose in portfolio_metrics['investments_by_loan_purpose']:
+                portfolio_metrics['investments_by_loan_purpose'][purpose]['total_amount'] = float(
+                    portfolio_metrics['investments_by_loan_purpose'][purpose]['total_amount'].quantize(Decimal('0.01'))
+                )
+
+            return enhance_response(
+                data=portfolio_metrics,
+                message="Portfolio value calculated successfully",
+                status=status.HTTP_200_OK
+            )
+
+        except Exception as e:
+            return enhance_response(
+                data={},
+                message=f"Error calculating portfolio value: {str(e)}",
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+
+class checkRepaymentBorrower(BaseBorrowerView, BaseValidator, generics.RetrieveAPIView):
+    queryset = Loan.objects.all()
+    serializer_class = LoanSerializer
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        user_id = User.objects.get(email=user.email)
+
+        # Check if loan exists
+        try:
+            borrowerDetails = Borrower.objects.filter(user=user_id).first()
+            if not borrowerDetails:
+                return enhance_response(
+                    data={},
+                    message="No borrower details found.",
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            borrower_id = Borrower.objects.get(user=user)
+            loanDetails = Loan.objects.filter(borrower=borrower_id.id)
+
+            response_data = []
+
+            for loan in loanDetails:
+                if loan.status != 'repaid':
+                    repayment_details = LoanRepaymentSchedule.objects.filter(loan=loan.id)
+
+                    for repayment in repayment_details:
+                        installment_data = {
+                            'loan_id': loan.id,  # Add the loan ID here
+                            'installment_number': repayment.installment_number,
+                            'repayment_id': repayment.id,
+                            'due_date': repayment.due_date,
+                            'payment_status': repayment.payment_status,
+                            'amount_paid': repayment.amount_paid,
+                            'amount_due': repayment.amount_due,
+                        }
+
+                        # Check due date logic
+                        now = timezone.now()
+                        due_date = repayment.due_date
+
+                        if repayment.payment_status == 'pending' or repayment.payment_status == 'missed':  # Use repayment.payment_status instead
+                            if due_date > now:  # Not yet due
+                                days_left = (due_date - now).days
+                                if days_left <= 15:
+                                    installment_data['notification'] = 'Due in less than 15 days'
+                            else:  # Due date has passed
+                                installment_data['payment_status'] = 'missed'
+
+                                # Check if the increase can be applied
+                                if not repayment.last_missed_date or (
+                                        repayment.last_missed_date.month != now.month and repayment.last_missed_date.year == now.year):
+                                    missed_amount = float(repayment.amount_due) * 1.05  # Increase by 5%
+                                    repayment.amount_due = f"{missed_amount:.2f}"  # Format to two decimal places
+                                    repayment.last_missed_date = now  # Update last missed date
+                                    repayment.payment_status='missed'
+                                    repayment.save()  # Save the updated repayment
+                                installment_data['amount_due'] = repayment.amount_due
+
+                        # Check if payment is enabled for missed installment
+                        if repayment.payment_status == 'missed' or (due_date - now).days <= 15:
+                            installment_data['is_payment_enabled'] = True
+                        else:
+                            installment_data['is_payment_enabled'] = False
+
+                        response_data.append(installment_data)
+
+            return enhance_response(
+                data=response_data,
+                message="Repayment details retrieved successfully.",
+                status=status.HTTP_200_OK
+            )
+
+        except Exception as e:
+            return enhance_response(
+                data={},
+                message=f"Error retrieving repayment details: {str(e)}",
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class loanRepayment(BaseBorrowerView, BaseValidator, generics.GenericAPIView):
+    queryset = Loan.objects.all()
+    serializer_class = LoanSerializer
+
+    def post(self, request, *args, **kwargs):
+
+
+        # Check if loan exists
+        try:
+            # Validate the required fields
+            validation_errors = self.validate_data(request.data, REQUIRED_LOAN_REPAYMENT_FIELD)
+            if validation_errors:
+                return enhance_response(data=validation_errors, status=status.HTTP_400_BAD_REQUEST,
+                                        message="Please enter required fields")
+
+            user = request.user
+            user_id = User.objects.get(email=user.email)
+            loan_id = request.data.get("loan_id")
+            repayment_id = request.data.get("repayment_id")
+            repayment_details = LoanRepaymentSchedule.objects.filter(id=repayment_id)
+            if len(repayment_details)==0:
+                return enhance_response(
+                    data={},
+                    message="No such repayment id",
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            for repayment in repayment_details:
+                if repayment.loan.id !=loan_id:
+                    return enhance_response(
+                        data={},
+                        message="Loan id is not matched",
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                if repayment.payment_status=='paid':
+                    return enhance_response(
+                        data={},
+                        message="Your EMI is already paid",
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            #     create stripe payment link
+                stripe_customer_id = user_id.stripe_customer_id
+                amount=repayment.amount_due
+                payment_link = create_payment_link_for_customer('cus_QywrJZdwDRUduW',amount,repayment_id)
+                # #  add to table
+                if not payment_link:
+                    return enhance_response(data={}, status=status.HTTP_400_BAD_REQUEST,
+                                            message="Unable to pay,  please try again")
+                to_serialize_data = {
+                    "payment_amount": amount,
+                    "stripe_payment_id": payment_link.id
+                }
+                serializer = PaymentHistorySerializer(data=to_serialize_data, context={"user": user_id})
+                if serializer.is_valid():
+                    serializer.save()
+                    response_data = dict(serializer.data)
+                    response_data["url"] = payment_link.url
+                    return enhance_response(data=response_data, message="Payment Link generated Successfully",
+                                            status=200)
+                else:
+                    return enhance_response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST,
+                                            message="Invalid data")
+
+        except Exception as e:
+            return enhance_response(
+                data={},
+                message=f"Error retrieving repayment details: {str(e)}",
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class checkRefundStatus(BaseBorrowerView,BaseValidator,generics.RetrieveAPIView):
+    def get(self, request, *args, **kwargs):
+        payment_id = request.query_params.get('payment_id')
+        repayment_id = request.query_params.get('repayment_id')
+
+
+        user = request.user
+        user_id = User.objects.get(email=user.email)
+        stripe_history = {}
+        if not repayment_id:
+            return enhance_response(data={}, status=status.HTTP_400_BAD_REQUEST,
+                                    message="Invalid Data")
+        if not payment_id:
+            # check_Add_fund_status
+
+            paymentHistory = PaymentHistory.objects.filter(user=user).order_by(
+                '-payment_date').first()
+            payment_id=paymentHistory.stripe_payment_id
+            stripe_history=check_Add_fund_status(paymentHistory.stripe_payment_id)
+        else:
+            stripe_history=check_Add_fund_status(payment_id)
+
+        if  stripe_history.status != "complete":
+            return enhance_response(data={}, status=status.HTTP_400_BAD_REQUEST,
+                                    message="payment is incomplete")
+
+        to_serialize_data = {
+            "transaction_type": "payment",
+            "amount": stripe_history.amount_total/100,
+            "payment_id": payment_id
+        }
+
+        try:
+            transaction_entry = Transaction.objects.get(payment_id=payment_id)
+            if(transaction_entry):
+                return enhance_response(data={}, status=status.HTTP_400_BAD_REQUEST,
+                                        message="You have already paid for this payment id")
+        except:
+
+            serializer = TransactionSerializer(data=to_serialize_data, context={"user": user_id})
+            if not serializer.is_valid():
+                return enhance_response(data={}, status=status.HTTP_400_BAD_REQUEST,
+                                        message="unable to pay fund")
+            serializer.save()
+            try:
+                #   update repayment table
+                borrower_id = Borrower.objects.get(user=user)
+                loanDetails = Loan.objects.filter(borrower=borrower_id.id).last()
+                repayment_details = LoanRepaymentSchedule.objects.filter(loan=loanDetails.id)
+                amountPaid=stripe_history.amount_total/100
+                for repayment in repayment_details:
+                    amountToBePaid=repayment.amount_due
+                    if(int(repayment_id)==int(repayment.id)):
+                        finalRepayment = LoanRepaymentSchedule.objects.get(id=repayment.id)
+                        finalRepayment.payment_status='paid'
+                        finalRepayment.amount_paid=float(amountPaid)
+                        finalRepayment.amount_due=float(amountToBePaid)-float(amountPaid)
+                        finalRepayment.save()
+                        to_serialize_data_emi = {
+                            "transaction_type": "payment",
+                            "amount": float(amountPaid),
+                            "stripe_payment_id": payment_id,
+                            'status':"completed"
+                        }
+
+                        serializerEmi = EmiSerializer(data=to_serialize_data_emi, context={"loan": loanDetails})
+                        serializerEmi.is_valid()
+                        serializerEmi.save()
+
+                CheckAllRepayment = LoanRepaymentSchedule.objects.filter(loan=loanDetails)
+                all_paid = True
+
+                for eachRepayment in CheckAllRepayment:
+                    print(eachRepayment.payment_status)
+                    if eachRepayment.payment_status.lower() != 'paid':
+                        all_paid = False
+                        break
+                if all_paid:
+                    print("update loan")
+                    loanDetails.status='repaid'
+                    loanDetails.save()
+                return enhance_response(data=[], message="Payment is completed",
+                                                status=200)
+
+            except Exception as e:
+
+                return enhance_response(
+
+                    data={},
+
+                    message=f"Error while repayment : {str(e)}",
+
+                    status=status.HTTP_400_BAD_REQUEST
+
+                )

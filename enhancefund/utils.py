@@ -165,8 +165,8 @@ def stripe_external_bank_account(acc_number,data):
 
 
 
-def create_payment_link_for_customer(customer_id,amount):
-    success_url = "https://yourdomain.com/payment/success"
+def create_payment_link_for_customer(customer_id,amount,installment_id):
+    success_url = f"https://yourdomain.com/payment/success?ins_id={installment_id}"
     cancel_url = "https://yourdomain.com/payment/cancel"
 
 

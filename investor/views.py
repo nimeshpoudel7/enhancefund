@@ -1,4 +1,7 @@
+from datetime import timezone
+
 from django.shortcuts import render
+from rest_framework.exceptions import ValidationError
 
 from borrower.models import Borrower
 from enhancefund.Constant import REQUIRED_ADD_FUND_FIELDS
@@ -10,7 +13,8 @@ from enhancefund.utils import enhance_response, create_payment_link_for_customer
     create_payout
 from investor.models import InvestorBalance
 from investor.serializers import PaymentHistorySerializer, TransactionSerializer, InvestorBalanceSerializer
-from loans.models import PaymentHistory, Transaction
+from loans.models import PaymentHistory, Transaction, Investment, LoanRepaymentSchedule
+from loans.serializers import InvestmentSerializer
 from users.models import User
 from rest_framework import status
 from decimal import Decimal
@@ -29,7 +33,7 @@ class InvestorAddFunds(BaseInvestorView,BaseValidator,generics.GenericAPIView):
         user_id = User.objects.get(email=user.email)  # Corrected line
         stripe_customer_id=user_id.stripe_customer_id
         amount=request.data.get('amount')
-        payment_link=create_payment_link_for_customer(stripe_customer_id,amount)
+        payment_link=create_payment_link_for_customer(stripe_customer_id,amount,"xvKjmlKNp11")
         #  add to table
         if not payment_link:
             return enhance_response(data={}, status=status.HTTP_400_BAD_REQUEST,
@@ -63,9 +67,7 @@ class CheckFundStatus(BaseInvestorView,BaseValidator,generics.RetrieveAPIView):
                 '-payment_date').first()
             payment_id=paymentHistory.stripe_payment_id
             stripe_history=check_Add_fund_status(paymentHistory.stripe_payment_id)
-            print(stripe_history)
         else:
-            print("aaaa")
             stripe_history=check_Add_fund_status(payment_id)
 
         if  stripe_history.status != "complete":
@@ -198,19 +200,99 @@ class WithdrawBalance(BaseAuthenticatedView,BaseValidator,generics.CreateAPIView
             )
 
 
+class InvestmentClosureProcess(BaseInvestorView, BaseValidator, generics.GenericAPIView):
+    queryset = Investment.objects.all()
+    serializer_class = InvestmentSerializer
 
+    def get(self, request, *args, **kwargs):
+        from django.utils import timezone
+        user = request.user
+        current_date = timezone.now()
 
+        try:
+            pending_closures = Investment.objects.filter(
+                investor=user,
+                status='Open',
+                closed_at__lte=current_date
+            ).select_related('loan')
 
+            if not pending_closures.exists():
+                return enhance_response(
+                    data={},
+                    message="No pending closures found for your investments",
+                    status=status.HTTP_200_OK
+                )
+            current_date = timezone.now()
+            response_data = []
 
+            for investment in pending_closures:
+                loan = investment.loan
+                has_repayments = LoanRepaymentSchedule.objects.filter(
+                    loan=loan,
+                    payment_status='paid'
+                ).exists()
+                print(has_repayments)
+                if has_repayments and investment.net_return > 0:
+                    try:
+                        transaction_data = {
+                            "transaction_type": "investment_return",
+                            "amount": float(investment.net_return),
+                            "status": "completed",
+                            "description": f"Net return for investment {investment.id}"
+                        }
 
+                        transaction_serializer = TransactionSerializer(
+                            data=transaction_data,
+                            context={"user": user}
+                        )
 
+                        if transaction_serializer.is_valid():
+                            transaction = transaction_serializer.save()
 
+                            # Update investment status
+                            investment.status = 'closed'
+                            investment.closed_at = current_date
+                            # investment.save()
 
+                            response_data.append({
+                                'investment_id': investment.id,
+                                'loan_id': loan.id,
+                                'amount_invested': float(investment.amount),
+                                'net_return': float(investment.net_return),
+                                'transaction_id': transaction.id,
+                                'original_closure_date': investment.closed_at,
+                                'actual_closure_date': current_date.date(),
+                                'status': 'closed'
+                            })
+                        else:
+                            raise ValidationError(transaction_serializer.errors)
 
+                    except Exception as e:
+                        response_data.append({
+                            'investment_id': investment.id,
+                            'loan_id': loan.id,
+                            'error': str(e),
+                            'status': 'failed',
+                            'original_closure_date': investment.closed_at
+                        })
+                        continue
 
+            if response_data:
+                return enhance_response(
+                    data=response_data,
+                    message="Investment closures processed successfully",
+                    status=status.HTTP_200_OK
+                )
+            else:
+                return enhance_response(
+                    data={},
+                    message="No eligible investments found for closure",
+                    status=status.HTTP_200_OK
+                )
 
-
-
-
-
-
+        except Exception as e:
+            return enhance_response(
+                data={},
+                message=f"Error processing investment closures: {str(e)}",
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

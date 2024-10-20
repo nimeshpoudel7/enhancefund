@@ -70,7 +70,15 @@ class User(AbstractBaseUser, PermissionsMixin):
         db_table = 'users'
 
     def __str__(self):
-        return self.email
+        return (
+            "{"
+            f"email: '{self.email or ''}', "
+            f"first_name: '{self.first_name or ''}', "
+            f"last_name: '{self.last_name or ''}', "
+            "}"
+        )
+
+
 class UserVerification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     VERIFICATION_TYPE_CHOICES = [

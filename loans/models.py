@@ -37,8 +37,8 @@ class Loan(models.Model):
             f"total_payable: '{self.total_payable or ''}', "
             f"is_fulfill: '{self.is_fulfill}', "
             f"loan_amount: '{self.loan_amount}', "
-
-            
+            f"loan_purpose: '{self.loan_purpose}', "
+            f"borrower: '{self.borrower}', "
             
             "}")
 
@@ -47,13 +47,26 @@ class Investment(models.Model):
     investor = models.ForeignKey(User, on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     net_return = models.DecimalField(max_digits=10, decimal_places=2,null=True)
+    status = models.CharField(default='Open', null=True)
+    closed_at = models.DateTimeField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
         db_table = 'investment'
 
     def __str__(self):
-        return f"Investment: {self.amount} by {self.investor.email} in Loan {self.loan_id}"
+        return (
+            "{"
+            f"loan: '{self.loan or 0}', "
+            f"investor: '{self.investor or ''}', "
+            f"amount: '{self.amount or ''}', "
+            f"net_return: '{self.net_return or ''}', "
+            f"closed_at: '{self.closed_at or ''}', "
+            f"status: '{self.status or ''}', "
+            f"created_at: '{self.created_at or ''}', "
+            
+            
+            "}")
 class EMIPayment(models.Model):
     loan = models.ForeignKey(Loan, on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -69,7 +82,15 @@ class EMIPayment(models.Model):
         db_table = 'emi_payment'
 
     def __str__(self):
-        return f"EMI Payment: {self.amount} for Loan {self.loan_id}"
+        return (
+            "{"
+            f"amount: '{self.amount or 0}', "
+            f"payment_date: '{self.payment_date or ''}', "
+            f"status: '{self.status or ''}', "
+            f"stripe_payment_id: '{self.stripe_payment_id or 0}', "
+            f"loan: '{self.loan or 0}', "
+            "}"
+        )
 class LoanApplication(models.Model):
     borrower = models.ForeignKey(Borrower, on_delete=models.CASCADE)
     amount_requested = models.DecimalField(max_digits=10, decimal_places=2)
@@ -99,6 +120,7 @@ class LoanRepaymentSchedule(models.Model):
         ('missed', 'Missed'),
     ]
     payment_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    last_missed_date = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
@@ -112,6 +134,8 @@ class LoanRepaymentSchedule(models.Model):
             f"payment_status: '{self.payment_status or ''}', "
             f"amount_paid: '{self.amount_paid or 0}', "
             f"amount_due: '{self.amount_due or 0}', "
+            f"loan: '{self.loan or 0}', "
+            
             "}"
         )
 class Transaction(models.Model):

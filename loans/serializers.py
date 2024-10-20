@@ -1,5 +1,5 @@
 from enhancefund.commonserializer import CommonSerializer
-from loans.models import Loan, LoanRepaymentSchedule, Investment
+from loans.models import Loan, LoanRepaymentSchedule, Investment, EMIPayment
 
 
 class LoanSerializer(CommonSerializer):
@@ -36,7 +36,7 @@ class SchedulerSerializer(CommonSerializer):
 class InvestmentSerializer(CommonSerializer):
     class Meta:
         model = Investment
-        fields = ['loan', 'investor', 'amount', 'created_at','net_return']
+        fields = ['loan', 'investor', 'amount', 'created_at','net_return','closed_at']
         read_only_fields = ['created_at', 'investor']  # Make investor read-only
 
     def create(self, validated_data):
@@ -52,6 +52,25 @@ class InvestmentSerializer(CommonSerializer):
             loan=loan,
             investor=investor,
             net_return=validated_data['net_return'],
-            amount=validated_data['amount']
+            amount=validated_data['amount'],
+            closed_at = validated_data['closed_at']
+
         )
         return investment
+
+
+class EmiSerializer(CommonSerializer):
+    class Meta:
+        model = EMIPayment
+        fields = ['stripe_payment_id','amount','payment_date','status']
+
+    def create(self, validated_data):
+        # Retrieve the user from context
+        loan = self.context.get('loan')
+
+
+        if not loan:
+            raise CommonSerializer.ValidationError("User not found in context")
+
+        # Create the address and associate it with the user
+        return EMIPayment.objects.create(loan=loan, **validated_data)
