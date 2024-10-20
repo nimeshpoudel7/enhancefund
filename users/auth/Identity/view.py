@@ -57,7 +57,7 @@ class VerificationStatus(BaseAuthenticatedView,generics.RetrieveAPIView):
         redis_data=get_value_view(user_email)
         if not redis_data:
             return enhance_response (data={}, message="Something wrong with Kyc, Please try again", status=400)
-        # print(redis_data)
+        print(redis_data,"redis")
         # redis_data={'key': 'kual@gmail.com', 'value': 'vs_1Q5CxnEATcezBu54kaTehIce'}
         verification_id = redis_data['value']
         stripe_response=stripe.identity.VerificationSession.retrieve(verification_id)
@@ -78,7 +78,6 @@ class VerificationStatus(BaseAuthenticatedView,generics.RetrieveAPIView):
             user.stripe_customer_id=customer.id
             user.save()
             user = request.user
-            user_id = User.objects.get(email=user)
 
 
             # user = User.objects.get(email=user_email)
