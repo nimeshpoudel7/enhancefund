@@ -237,7 +237,7 @@ class InvestmentClosureProcess(BaseInvestorView, BaseValidator, generics.Generic
                 if has_repayments and investment.net_return > 0:
                     try:
                         transaction_data = {
-                            "transaction_type": "investment_return",
+                            "transaction_type": "deposit",
                             "amount": float(investment.net_return),
                             "status": "completed",
                             "description": f"Net return for investment {investment.id}"
