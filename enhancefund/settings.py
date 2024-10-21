@@ -182,8 +182,9 @@ DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 # Allowed hosts
 ALLOWED_HOSTS = [
-    'your-render-app.onrender.com',  # Replace with your Render app URL
-    'your-custom-domain.com',  # Add any other domains you may use
+    'enhancefund.onrender.com',  # Replace with your Render app URL
+    'localhost',  # Add any other domains you may use
+    '127.0.0.1'
 ]
 
 # Application definition
