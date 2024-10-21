@@ -25,4 +25,4 @@ SIMPLE_JWT = {
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
 }
-STRIPE_API=settings.STRIPE_SECRET_KEY
+STRIPE_API='sk_test_51Q5A6eEATcezBu54bc2ohQMdGtlIH1bsB1VKKL1pBskycmzgjEdBQseDKlKa6QZQOov9yvhadioOvI7GFzACyHbV00BYYHlJU1'
