@@ -165,11 +165,7 @@ def stripe_external_bank_account(acc_number,data):
 
 
 
-def create_payment_link_for_customer(customer_id,amount,installment_id):
-    success_url = f"https://yourdomain.com/payment/success?ins_id={installment_id}"
-    cancel_url = "https://yourdomain.com/payment/cancel"
-
-
+def create_payment_link_for_customer(customer_id, amount, installment_id):
     try:
         checkout_session = stripe.checkout.Session.create(
             customer=customer_id,
@@ -185,13 +181,15 @@ def create_payment_link_for_customer(customer_id,amount,installment_id):
                 'quantity': 1,
             }],
             mode='payment',
-            success_url=success_url,
-            cancel_url=cancel_url,
+            # Use checkout_session.id for URLs
+            success_url=f"https://yourdomain.com/payment/success?ins_id={installment_id}&session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url="https://yourdomain.com/payment/cancel?session_id={{CHECKOUT_SESSION_ID}}",
         )
         return checkout_session
     except stripe.error.StripeError as e:
         print(f"Error creating payment link: {str(e)}")
         return None
+
 
 def check_Add_fund_status(payment_id):
    payment_details= stripe.checkout.Session.retrieve(

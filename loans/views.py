@@ -716,18 +716,11 @@ class checkRefundStatus(BaseBorrowerView,BaseValidator,generics.RetrieveAPIView)
         user = request.user
         user_id = User.objects.get(email=user.email)
         stripe_history = {}
-        if not repayment_id:
+        if not repayment_id and not payment_id:
             return enhance_response(data={}, status=status.HTTP_400_BAD_REQUEST,
                                     message="Invalid Data")
-        if not payment_id:
-            # check_Add_fund_status
 
-            paymentHistory = PaymentHistory.objects.filter(user=user).order_by(
-                '-payment_date').first()
-            payment_id=paymentHistory.stripe_payment_id
-            stripe_history=check_Add_fund_status(paymentHistory.stripe_payment_id)
-        else:
-            stripe_history=check_Add_fund_status(payment_id)
+        stripe_history=check_Add_fund_status(payment_id)
 
         if  stripe_history.status != "complete":
             return enhance_response(data={}, status=status.HTTP_400_BAD_REQUEST,
