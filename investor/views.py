@@ -110,7 +110,6 @@ class CheckFundStatus(BaseInvestorView,BaseValidator,generics.RetrieveAPIView):
                      return enhance_response(data=serializerInvestor.data, status=status.HTTP_200_OK,
                                         message="Your fund is added Successfully")
             else:
-               print()
                new_added_amount=stripe_history.amount_total / 100
                balance["account_balance"] =Decimal(investor_balance.account_balance)+ Decimal(new_added_amount)
                serializerInvestor = InvestorBalanceSerializer(investor_balance,data=balance, partial=True,
@@ -224,6 +223,9 @@ class InvestmentClosureProcess(BaseInvestorView, BaseValidator, generics.Generic
                 )
             current_date = timezone.now()
             response_data = []
+            balance={}
+            sum=0
+            user_id = User.objects.get(email=user.email)
 
             for investment in pending_closures:
                 loan = investment.loan
@@ -248,11 +250,12 @@ class InvestmentClosureProcess(BaseInvestorView, BaseValidator, generics.Generic
 
                         if transaction_serializer.is_valid():
                             transaction = transaction_serializer.save()
+                            sum=sum+investment.net_return
 
                             # Update investment status
                             investment.status = 'closed'
                             investment.closed_at = current_date
-                            # investment.save()
+                            investment.save()
 
                             response_data.append({
                                 'investment_id': investment.id,
@@ -276,7 +279,13 @@ class InvestmentClosureProcess(BaseInvestorView, BaseValidator, generics.Generic
                             'original_closure_date': investment.closed_at
                         })
                         continue
-
+            investor_balance = InvestorBalance.objects.filter(user=user_id).first()
+            new_added_amount =sum
+            balance["account_balance"] = Decimal(investor_balance.account_balance) + Decimal(new_added_amount)
+            serializerInvestor = InvestorBalanceSerializer(investor_balance, data=balance, partial=True,
+                                                           context={"user": user_id})
+            serializerInvestor.is_valid()
+            serializerInvestor.save()
             if response_data:
                 return enhance_response(
                     data=response_data,
