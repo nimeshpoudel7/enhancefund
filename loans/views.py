@@ -679,7 +679,7 @@ class loanRepayment(BaseBorrowerView, BaseValidator, generics.GenericAPIView):
             #     create stripe payment link
                 stripe_customer_id = user_id.stripe_customer_id
                 amount=repayment.amount_due
-                payment_link = create_payment_link_for_customer('cus_QywrJZdwDRUduW',amount,repayment_id)
+                payment_link = create_payment_link_for_customer(stripe_customer_id,amount,repayment_id)
                 # #  add to table
                 if not payment_link:
                     return enhance_response(data={}, status=status.HTTP_400_BAD_REQUEST,
