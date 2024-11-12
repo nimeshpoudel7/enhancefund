@@ -58,28 +58,30 @@ class UserLoginAPI(generics.GenericAPIView,BaseValidator):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     def post(self, request, *args, **kwargs):
+        try:
 
-        validation_errors = self.validate_data(request.data,REQUIRED_USER_FIELDS_LOGIN)
+            validation_errors = self.validate_data(request.data,REQUIRED_USER_FIELDS_LOGIN)
 
-        if validation_errors:
-            return enhance_response(data=validation_errors,status=0,message="login error, please try again")
+            if validation_errors:
+                return enhance_response(data=validation_errors,status=0,message="login error, please try again")
 
-        username = request.data.get('email')
-        password = request.data.get('password')
+            username = request.data.get('email')
+            password = request.data.get('password')
 
-        user = authenticate(username=username, password=password)
-        print("aaa",user.id)
-        if user:
-            token, created = Token.objects.get_or_create(user=user)
-            print("token",token)
-            data = {
-                'user': self.get_serializer(user).data,
-                'token': f"Token {token.key}"
-                }
-            return enhance_response(data=data, status=status.HTTP_200_OK, message="Login successful")
-        else:
+            user = authenticate(username=username, password=password)
+            print("aaa",user.id)
+            if user:
+                token, created = Token.objects.get_or_create(user=user)
+                print("token",token)
+                data = {
+                    'user': self.get_serializer(user).data,
+                    'token': f"Token {token.key}"
+                    }
+                return enhance_response(data=data, status=status.HTTP_200_OK, message="Login successful")
+            else:
+                return enhance_response(status=status.HTTP_401_UNAUTHORIZED, message="Invalid credentials")
+        except:
             return enhance_response(status=status.HTTP_401_UNAUTHORIZED, message="Invalid credentials")
-
 
 
 class UserDetailsAPI(BaseAuthenticatedView,generics.RetrieveAPIView):
