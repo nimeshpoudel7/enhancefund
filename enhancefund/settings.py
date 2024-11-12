@@ -191,6 +191,23 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:*',  # Allows all ports on 127.0.0.1
     'https://enhancefund.onrender.com',  # Replace with your Render app URL
 ]
+CORS_ALLOW_HEADERS = [
+    "content-type",
+    "authorization",
+    "X-Requested-With",
+    "Accept",
+    "Origin",
+]
+
+CORS_ALLOW_METHODS = [
+    "GET",
+    "POST",
+    "PUT",
+    "DELETE",
+    "OPTIONS",
+]
+CORS_ALLOW_CREDENTIALS = True
+
 
 
 # Application definition
