@@ -69,7 +69,6 @@ class UserLoginAPI(generics.GenericAPIView,BaseValidator):
             password = request.data.get('password')
 
             user = authenticate(username=username, password=password)
-            print("aaa",user.id)
             if user:
                 token, created = Token.objects.get_or_create(user=user)
                 print("token",token)
