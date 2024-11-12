@@ -189,7 +189,7 @@ ALLOWED_HOSTS = [
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:*',  # Allows all ports on localhost
     'http://127.0.0.1:*',  # Allows all ports on 127.0.0.1
-    'enhancefund.onrender.com',  # Replace with your Render app URL
+    'https://enhancefund.onrender.com',  # Replace with your Render app URL
 ]
 
 
