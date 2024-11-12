@@ -186,6 +186,12 @@ ALLOWED_HOSTS = [
     'localhost',  # Add any other domains you may use
     '127.0.0.1'
 ]
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:*',  # Allows all ports on localhost
+    'http://127.0.0.1:*',  # Allows all ports on 127.0.0.1
+    'enhancefund.onrender.com',  # Replace with your Render app URL
+]
+
 
 # Application definition
 INSTALLED_APPS = [
@@ -202,6 +208,7 @@ INSTALLED_APPS = [
     'staff',
     'rest_framework',
     'rest_framework.authtoken',
+    'corsheaders'
 ]
 
 # REST framework settings
@@ -223,6 +230,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
 ]
 
 # URL configuration
