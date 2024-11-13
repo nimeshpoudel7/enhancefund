@@ -4,7 +4,8 @@ from dateutil.relativedelta import relativedelta
 from django.db.models import Sum
 from django.utils import timezone
 
-from borrower.models import Borrower
+from borrower.models import Borrower, CreditScoreHistory
+from borrower.serializer import CreditScoreHistorySerializer
 from enhancefund.Constant import REQUIRED_CREATE_LOAN_FIELD, REQUIRED_CREATE_INVESTMENT_FIELD, \
     REQUIRED_LOAN_REPAYMENT_FIELD
 from enhancefund.postvalidators import BaseValidator
@@ -179,7 +180,7 @@ class loanList(BaseValidator, generics.ListAPIView):
         try:
             # Retrieve all loans from the Loan model
             loans = Loan.objects.all()
-
+            print(loans)
             # If no loans exist, return a 404 response
             if not loans.exists():
                 return enhance_response(
@@ -193,10 +194,15 @@ class loanList(BaseValidator, generics.ListAPIView):
 
             print(loan_data)
             for loan in loans:
+                borrower = loan.borrower
+                credit_score_history = CreditScoreHistory.objects.filter(borrower=borrower)
+                credit_score_history_data = CreditScoreHistorySerializer(credit_score_history, many=True).data
+
                 serializer = self.get_serializer(loan)
                 loan_dict = serializer.data
                 funded_amount = Investment.objects.filter(loan=loan).aggregate(Sum('amount'))['amount__sum'] or 0
                 remaining_amount = loan.amount - funded_amount
+                loan_dict['credit_score_history'] = credit_score_history_data
 
                 loan_dict['funded_amount'] = float(funded_amount)
                 loan_dict['remaining_amount'] = float(remaining_amount)

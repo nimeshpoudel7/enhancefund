@@ -1,11 +1,14 @@
+from borrower.serializer import BorrowerSerializer, CreditScoreHistorySerializer
 from enhancefund.commonserializer import CommonSerializer
 from loans.models import Loan, LoanRepaymentSchedule, Investment, EMIPayment
 
 
 class LoanSerializer(CommonSerializer):
+    borrower = BorrowerSerializer()
+
     class Meta:
         model = Loan
-        fields = ['id','amount','term_months','status','loan_purpose','interest_rate','total_payable','is_fulfill','loan_amount']
+        fields = ['id','amount','term_months','status','loan_purpose','interest_rate','total_payable','is_fulfill','loan_amount','borrower']
 
     def create(self, validated_data):
         # Retrieve the user from context
@@ -17,6 +20,7 @@ class LoanSerializer(CommonSerializer):
 
         # Create the address and associate it with the user
         return Loan.objects.create(borrower=borrower, **validated_data)
+
 
 class SchedulerSerializer(CommonSerializer):
     class Meta:
