@@ -182,8 +182,8 @@ def create_payment_link_for_customer(customer_id, amount, installment_id):
             }],
             mode='payment',
             # Use checkout_session.id for URLs
-            success_url=f"https://yourdomain.com/payment/success?ins_id={installment_id}&session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url="https://yourdomain.com/payment/cancel?session_id={{CHECKOUT_SESSION_ID}}",
+            success_url=f"http://localhost:3003/page/investor/success.html?ins_id={installment_id}&session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url="http://localhost:3003/page/investor/fail.html?session_id={{CHECKOUT_SESSION_ID}}",
         )
         return checkout_session
     except stripe.error.StripeError as e:
