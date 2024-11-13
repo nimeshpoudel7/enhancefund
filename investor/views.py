@@ -1,5 +1,6 @@
 from datetime import timezone
 
+from django.forms import model_to_dict
 from django.shortcuts import render
 from rest_framework.exceptions import ValidationError
 
@@ -120,22 +121,29 @@ class CheckFundStatus(BaseInvestorView,BaseValidator,generics.RetrieveAPIView):
                                     message="Your fund is added Successfully")
 
 
-class WalletBalance(BaseInvestorView,BaseValidator,generics.RetrieveAPIView):
-    queryset = InvestorBalance.objects.all()
-    serializer_class = InvestorBalanceSerializer
+class WalletBalance(BaseAuthenticatedView,BaseValidator,generics.RetrieveAPIView):
+
 
     def get(self, request, *args, **kwargs):
         user = request.user
 
         try:
-            investor_balance = InvestorBalance.objects.get(user=user)
-            serializer = self.get_serializer(investor_balance)
+            if user.role == "borrower":
+                borrower_balance = Borrower.objects.get(user=user)
+                balance_data = model_to_dict(borrower_balance)  # Convert InvestorBalance instance to a dict
+
+            else:
+                investor_balance = InvestorBalance.objects.get(user=user)
+                balance_data = model_to_dict(investor_balance)  # Convert InvestorBalance instance to a dict
+
+            print(user.role)
+
             return enhance_response(
-                data=serializer.data,
+                data=balance_data,
                 message="Wallet balance retrieved successfully",
                 status=status.HTTP_200_OK
             )
-        except InvestorBalance.DoesNotExist:
+        except :
             return enhance_response(
                 data={},
                 message="No wallet balance found for this user",
