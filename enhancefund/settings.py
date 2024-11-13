@@ -187,8 +187,8 @@ ALLOWED_HOSTS = [
     '127.0.0.1'
 ]
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:*',  # Allows all ports on localhost
-    'http://127.0.0.1:*',  # Allows all ports on 127.0.0.1
+    'http://localhost:3003',  # Allows all ports on localhost
+    'http://127.0.0.1:3003',  # Allows all ports on 127.0.0.1
     'https://enhancefund.onrender.com',  # Replace with your Render app URL
 ]
 CORS_ALLOW_HEADERS = [
@@ -322,7 +322,7 @@ MIDDLEWARE += [
     'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-CORS_ORIGIN_ALLOW_ALL = True
+# CORS_ORIGIN_ALLOW_ALL = True
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
