@@ -5,7 +5,7 @@ from django.db.models import Sum
 from django.utils import timezone
 
 from borrower.models import Borrower, CreditScoreHistory
-from borrower.serializer import CreditScoreHistorySerializer
+from borrower.serializer import CreditScoreHistorySerializer, BorrowerSerializer
 from enhancefund.Constant import REQUIRED_CREATE_LOAN_FIELD, REQUIRED_CREATE_INVESTMENT_FIELD, \
     REQUIRED_LOAN_REPAYMENT_FIELD
 from enhancefund.postvalidators import BaseValidator
@@ -195,6 +195,7 @@ class loanList(BaseValidator, generics.ListAPIView):
             print(loan_data)
             for loan in loans:
                 borrower = loan.borrower
+                borrower_data = BorrowerSerializer(borrower).data  # Use the correct serializer for the borrower
                 credit_score_history = CreditScoreHistory.objects.filter(borrower=borrower)
                 credit_score_history_data = CreditScoreHistorySerializer(credit_score_history, many=True).data
 
@@ -203,6 +204,7 @@ class loanList(BaseValidator, generics.ListAPIView):
                 funded_amount = Investment.objects.filter(loan=loan).aggregate(Sum('amount'))['amount__sum'] or 0
                 remaining_amount = loan.amount - funded_amount
                 loan_dict['credit_score_history'] = credit_score_history_data
+                loan_dict['borrower'] = borrower_data
 
                 loan_dict['funded_amount'] = float(funded_amount)
                 loan_dict['remaining_amount'] = float(remaining_amount)
