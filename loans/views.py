@@ -427,7 +427,7 @@ class myInvestment(BaseInvestorView, BaseValidator, generics.RetrieveAPIView):
                 loan_data = {
                     'loan_id': investment.loan.id,
                     'loan_amount': investment.loan.amount,
-                    'loan purpose':investment.loan.loan_purpose,
+                    'loan_purpose':investment.loan.loan_purpose,
 
 
                     # 'loan_interest_rate':,
@@ -588,7 +588,7 @@ class checkRepaymentBorrower(BaseBorrowerView, BaseValidator, generics.RetrieveA
             for loan in loanDetails:
                 if loan.status != 'repaid':
                     repayment_details = LoanRepaymentSchedule.objects.filter(loan=loan.id)
-
+                    print(repayment_details)
                     for repayment in repayment_details:
                         installment_data = {
                             'loan_id': loan.id,  # Add the loan ID here
