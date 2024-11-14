@@ -4,11 +4,10 @@ from loans.models import Loan, LoanRepaymentSchedule, Investment, EMIPayment
 
 
 class LoanSerializer(CommonSerializer):
-    borrower = BorrowerSerializer()
 
     class Meta:
         model = Loan
-        fields = ['id','amount','term_months','status','loan_purpose','interest_rate','total_payable','is_fulfill','loan_amount','borrower']
+        fields = ['id','amount','term_months','status','loan_purpose','interest_rate','total_payable','is_fulfill','loan_amount']
 
     def create(self, validated_data):
         # Retrieve the user from context
