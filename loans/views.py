@@ -428,14 +428,15 @@ class myInvestment(BaseInvestorView, BaseValidator, generics.RetrieveAPIView):
                     'loan_id': investment.loan.id,
                     'loan_amount': investment.loan.amount,
                     'loan_purpose':investment.loan.loan_purpose,
-
-
+                    'term_months': investment.loan.term_months,
+                    'is_fulfill':investment.loan.is_fulfill
                     # 'loan_interest_rate':,
                 }
+                print(investment)
                 interest_rate = Decimal(investment.loan.interest_rate) * Decimal(0.97)
                 borrower_details = {
-                    'first Name':investment.loan.borrower.user.first_name,
-                    'Last Nme':investment.loan.borrower.user.last_name
+                    'first_Name':investment.loan.borrower.user.first_name,
+                    'Last_Namee':investment.loan.borrower.user.last_name
                  }
                 print()
                 data_to_send.append({
