@@ -60,9 +60,12 @@ class VerificationStatus(BaseAuthenticatedView,generics.RetrieveAPIView):
         print(redis_data,"redis")
         # redis_data={'key': 'kual@gmail.com', 'value': 'vs_1Q5CxnEATcezBu54kaTehIce'}
         verification_id = redis_data['value']
+        verification_id = verification_id.decode('utf-8')
+
+        print(verification_id,"verification_id")
         stripe_response=stripe.identity.VerificationSession.retrieve(verification_id)
-        # print(stripe_response)
-        if stripe_response["status"] != "requires_input":
+        print(stripe_response,"pppppppp")
+        if stripe_response["status"] == "requires_input":
             return enhance_response(data={}, message="We are Proccessing Your Kyc", status=204)
 
 
