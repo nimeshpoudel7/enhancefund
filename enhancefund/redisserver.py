@@ -1,14 +1,11 @@
 from django.http import JsonResponse
 import redis
 
-# Create a Redis client instance
-r = redis.Redis(
-    host='redis-18686.c257.us-east-1-3.ec2.redns.redis-cloud.com',
-    port=18829,
-    password='BC17yZIMp2B1FmuZnVGO2sGSAdTcznVt',
-    decode_responses=True  # This will decode the responses to strings
-)
 
+r = redis.Redis(
+  host='redis-18686.c257.us-east-1-3.ec2.redns.redis-cloud.com',
+  port=18686,
+  password='BC17yZIMp2B1FmuZnVGO2sGSAdTcznVt')
 def set_cache_value(key, value, timeout=60*15):
     """
     Set a value in the Redis cache.
