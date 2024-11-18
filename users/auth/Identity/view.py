@@ -66,9 +66,7 @@ class VerificationStatus(BaseAuthenticatedView,generics.RetrieveAPIView):
         stripe_response=stripe.identity.VerificationSession.retrieve(verification_id)
         print(stripe_response,"pppppppp")
         if stripe_response["status"] == "requires_input":
-            return enhance_response(data={}, message="We are Proccessing Your Kyc", status=204)
-
-
+            return enhance_response(data={"kyc_status": 204}, message="We are Processing Your KYC", status=200)
 
         if stripe_response["status"] != "verified":
             return enhance_response(data={},  message="Your Previous kyc was failed, Please try again", status=400)
