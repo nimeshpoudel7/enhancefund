@@ -62,6 +62,9 @@ class VerificationStatus(BaseAuthenticatedView,generics.RetrieveAPIView):
         verification_id = redis_data['value']
         stripe_response=stripe.identity.VerificationSession.retrieve(verification_id)
         # print(stripe_response)
+        if stripe_response["status"] != "requires_input":
+            return enhance_response(data={}, message="We are Proccessing Your Kyc", status=204)
+
 
 
         if stripe_response["status"] != "verified":
