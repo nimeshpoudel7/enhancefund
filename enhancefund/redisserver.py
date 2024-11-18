@@ -3,9 +3,9 @@ import redis
 
 # Create a Redis client instance
 r = redis.Redis(
-    host='redis-18829.c90.us-east-1-3.ec2.redns.redis-cloud.com',
+    host='redis-18686.c257.us-east-1-3.ec2.redns.redis-cloud.com',
     port=18829,
-    password='YYxdxXW19ABdyxIysxXV4d7VFVIY2n2K',
+    password='BC17yZIMp2B1FmuZnVGO2sGSAdTcznVt',
     decode_responses=True  # This will decode the responses to strings
 )
 
