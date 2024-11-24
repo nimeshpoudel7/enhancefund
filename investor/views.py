@@ -1,4 +1,5 @@
 from datetime import timezone
+from dbm import error
 
 from django.forms import model_to_dict
 from django.shortcuts import render
@@ -153,6 +154,8 @@ class WalletBalance(BaseAuthenticatedView,BaseValidator,generics.RetrieveAPIView
 class WithdrawBalance(BaseAuthenticatedView,BaseValidator,generics.CreateAPIView):
     def post(self, request, *args, **kwargs):
         user = request.user
+        user_id = User.objects.get(email=user.email)
+
         try:
             validation_errors = self.validate_data(request.data, REQUIRED_ADD_FUND_FIELDS)
             if validation_errors:
@@ -185,24 +188,33 @@ class WithdrawBalance(BaseAuthenticatedView,BaseValidator,generics.CreateAPIView
                 investor_details.account_balance = float(investor_details.account_balance - requested_amount)
                 investor_details.save()
                 user_id = User.objects.get(email=user.email)
+            print("11111111")
 
             to_serialize_data = {
                 "transaction_type": "withdrawal",
                 "amount": requested_amount,
                 "payment_id": "internal"
             }
+
             serializerTransactionBorrower = TransactionSerializer(data=to_serialize_data, context={"user": user_id})
-            serializerTransactionBorrower.is_valid()
-            serializerTransactionBorrower.save()
+            is_valid=serializerTransactionBorrower.is_valid()
+
+            if not is_valid:
+                print("Validation failed. Errors:", serializerTransactionBorrower.errors)
+            else:
+                print("Validation successful. Saving data...")
+                serializerTransactionBorrower.save()
+
+            print("aaaaa")
             return enhance_response(
-                    message="Withdraw is completed",
-                    status=status.HTTP_200_OK
+                message="Your request is in processing",
+                status=status.HTTP_200_OK
                 )
-            print(stripe_response)
-        except:
+        except Exception as e:
+            print("Unhandled exception:", str(e))
             return enhance_response(
                 data={},
-                message="Something went wrong",
+                message="An unexpected error occurred.",
                 status=status.HTTP_400_BAD_REQUEST
             )
 
