@@ -167,6 +167,16 @@ def stripe_external_bank_account(acc_number,data):
 
 def create_payment_link_for_customer(customer_id, amount, installment_id):
     try:
+        success_url = (
+            f"http://localhost:3003/page/Borrower/success.html?ins_id={installment_id}&session_id={{CHECKOUT_SESSION_ID}}"
+            if installment_id == "xvKjmlKNp11"
+            else f"http://localhost:3003/page/investor/success.html?ins_id={installment_id}&session_id={{CHECKOUT_SESSION_ID}}"
+        )
+        cancel_url = (
+            f"http://localhost:3003/page/Borrower/fail.html?session_id={{CHECKOUT_SESSION_ID}}"
+            if installment_id == "xvKjmlKNp11"
+            else f"http://localhost:3003/page/investor/fail.html?session_id={{CHECKOUT_SESSION_ID}}"
+        )
         checkout_session = stripe.checkout.Session.create(
             customer=customer_id,
             payment_method_types=['card'],
@@ -182,8 +192,8 @@ def create_payment_link_for_customer(customer_id, amount, installment_id):
             }],
             mode='payment',
             # Use checkout_session.id for URLs
-            success_url=f"http://localhost:3003/page/investor/success.html?ins_id={installment_id}&session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url="http://localhost:3003/page/investor/fail.html?session_id={{CHECKOUT_SESSION_ID}}",
+            success_url=success_url,
+            cancel_url=cancel_url,
         )
         return checkout_session
     except stripe.error.StripeError as e:
