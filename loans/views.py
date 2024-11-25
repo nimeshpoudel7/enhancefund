@@ -571,12 +571,7 @@ class checkRepaymentBorrower(BaseBorrowerView, BaseValidator, generics.RetrieveA
         user = request.user
         user_id = User.objects.get(email=user.email)
         loan_id = request.query_params.get("loan_id")
-        if not loan_id:
-            return enhance_response(
-                data={},
-                message="No Loan Details found.",
-                status=status.HTTP_404_NOT_FOUND
-            )
+
 
         # Check if loan exists
         try:
@@ -589,7 +584,11 @@ class checkRepaymentBorrower(BaseBorrowerView, BaseValidator, generics.RetrieveA
                 )
 
             borrower_id = Borrower.objects.get(user=user)
-            loanDetails = Loan.objects.filter(borrower=borrower_id.id,id=loan_id)
+            if loan_id:
+                loanDetails = Loan.objects.filter(borrower=borrower_id.id,id=loan_id)
+            else:
+                loanDetails = Loan.objects.filter(borrower=borrower_id.id)
+
 
             response_data = []
 
