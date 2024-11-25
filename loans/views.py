@@ -570,7 +570,7 @@ class checkRepaymentBorrower(BaseBorrowerView, BaseValidator, generics.RetrieveA
     def get(self, request, *args, **kwargs):
         user = request.user
         user_id = User.objects.get(email=user.email)
-        loan_id = request.data.get("loan_id")
+        loan_id = request.query_params.get("loan_id")
         if not loan_id:
             return enhance_response(
                 data={},
