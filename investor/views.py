@@ -325,3 +325,21 @@ class InvestmentClosureProcess(BaseInvestorView, BaseValidator, generics.Generic
                 message=f"Error processing investment closures: {str(e)}",
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class RecentTancation(BaseInvestorView, BaseValidator, generics.GenericAPIView):
+    queryset = Investment.objects.all()
+    serializer_class = InvestmentSerializer
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        user_id = User.objects.get(email=user.email)
+        TransactionData = Transaction.objects.filter(user=user).order_by('-id')[:3]
+        serialized_data = TransactionSerializer(TransactionData, many=True).data
+        print(serialized_data)
+        return enhance_response(
+            data=serialized_data,
+            message="Investment closures processed successfully",
+            status=status.HTTP_200_OK
+        )
+

@@ -2,7 +2,8 @@
 
 from django.urls import path
 
-from investor.views import InvestorAddFunds, CheckFundStatus, WalletBalance, WithdrawBalance, InvestmentClosureProcess
+from investor.views import InvestorAddFunds, CheckFundStatus, WalletBalance, WithdrawBalance, InvestmentClosureProcess, \
+    RecentTancation
 from loans.views import PortfolioValue
 
 urlpatterns = [
@@ -12,5 +13,6 @@ urlpatterns = [
     path('common/withdraw-balance/', WithdrawBalance.as_view(), name='WalletBalance'),
     path('investor/portfolio-value/', PortfolioValue.as_view(), name='WalletBalance'),
     path('investor/get-return/', InvestmentClosureProcess.as_view(), name='WalletBalance'),
+    path('investor/recent-transaction/', RecentTancation.as_view(), name='WalletBalance'),
 
 ]
