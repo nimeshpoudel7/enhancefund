@@ -185,11 +185,12 @@ ALLOWED_HOSTS = [
     'enhancefund.onrender.com',  # Replace with your Render app URL
     'localhost',  # Add any other domains you may use
     '127.0.0.1'
+    'enhancefund.netlify.app'
 ]
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3003',  # Allows all ports on localhost
     'http://127.0.0.1:3003',  # Allows all ports on 127.0.0.1
-    'https://enhancefund.netlify.app/',
+    'https://enhancefund.netlify.app',
     'https://enhancefund.onrender.com',  # Replace with your Render app URL
 ]
 CORS_ALLOW_HEADERS = [
