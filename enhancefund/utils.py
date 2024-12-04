@@ -171,11 +171,11 @@ def create_payment_link_for_customer(customer_id, amount, installment_id):
         cancel_url = ""
 
         if installment_id == "xvKjmlKNp11":
-            success_url =    f"http://localhost:3003/page/investor/success.html?ins_id={installment_id}&session_id={{CHECKOUT_SESSION_ID}}"
-            cancel_url = f"http://localhost:3003/page/investor/fail.html?session_id={{CHECKOUT_SESSION_ID}}"
+            success_url =    f"https://enhancefund.netlify.app/page/investor/success.html?ins_id={installment_id}&session_id={{CHECKOUT_SESSION_ID}}"
+            cancel_url = f"https://enhancefund.netlify.app/page/investor/fail.html?session_id={{CHECKOUT_SESSION_ID}}"
         else:
-            success_url =     f"http://localhost:3003/page/Borrower/success.html?ins_id={installment_id}&session_id={{CHECKOUT_SESSION_ID}}"
-            cancel_url = f"http://localhost:3003/page/borrower/fail.html?session_id={{CHECKOUT_SESSION_ID}}"
+            success_url =     f"https://enhancefund.netlify.app/page/Borrower/success.html?ins_id={installment_id}&session_id={{CHECKOUT_SESSION_ID}}"
+            cancel_url = f"https://enhancefund.netlify.app/page/borrower/fail.html?session_id={{CHECKOUT_SESSION_ID}}"
         checkout_session = stripe.checkout.Session.create(
             customer=customer_id,
             payment_method_types=['card'],
