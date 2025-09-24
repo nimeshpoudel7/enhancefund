@@ -1,0 +1,720 @@
+{
+  "project": "EnhanceFund - Peer-to-Peer Lending Platform",
+  "version": "1.0.0",
+  "base_url": "http://localhost:8000/api",
+  "common_response_format": {
+    "code": "1 for success, 0 for error",
+    "message": "Success or error message",
+    "data": "Response data or empty object"
+  },
+  "authentication": {
+    "user_registration": {
+      "endpoint": "POST /api/auth/create-user/",
+      "description": "Register a new user",
+      "request": {
+        "email": "user@example.com",
+        "phone_number": "+1234567890",
+        "password": "SecurePassword123!",
+        "confirm_password": "SecurePassword123!",
+        "role": "borrower",
+        "date_of_birth": "1990-01-15",
+        "first_name": "John",
+        "last_name": "Doe"
+      },
+      "response_success": {
+        "code": 1,
+        "message": "User created successfully",
+        "data": {
+          "id": 1,
+          "email": "user@example.com",
+          "phone_number": "+1234567890",
+          "role": "borrower",
+          "status": "active",
+          "stripe_customer_id": null,
+          "created_at": "2024-01-15T10:30:00Z",
+          "updated_at": "2024-01-15T10:30:00Z",
+          "checklist": ["Register"],
+          "date_of_birth": "1990-01-15",
+          "first_name": "John",
+          "last_name": "Doe"
+        }
+      },
+      "response_error": {
+        "code": 0,
+        "message": "User creation error",
+        "data": {
+          "email": ["This field is required."],
+          "password": ["Password fields didn't match."]
+        }
+      }
+    },
+    "user_login": {
+      "endpoint": "POST /api/auth/login/",
+      "description": "User login",
+      "request": {
+        "email": "user@example.com",
+        "password": "SecurePassword123!"
+      },
+      "response_success": {
+        "code": 1,
+        "message": "Login successful",
+        "data": {
+          "user": {
+            "id": 1,
+            "email": "user@example.com",
+            "phone_number": "+1234567890",
+            "role": "borrower",
+            "status": "active",
+            "checklist": ["Register"],
+            "date_of_birth": "1990-01-15",
+            "first_name": "John",
+            "last_name": "Doe"
+          },
+          "token": "Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+        }
+      },
+      "response_error": {
+        "code": 0,
+        "message": "login error, please try again",
+        "data": {
+          "email": ["This field is required."],
+          "password": ["This field is required."]
+        }
+      }
+    },
+    "get_user_details": {
+      "endpoint": "GET /api/auth/user-details/",
+      "description": "Get authenticated user details",
+      "headers": {
+        "Authorization": "Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+      },
+      "response_success": {
+        "code": 1,
+        "message": "Request was successful",
+        "data": {
+          "id": 1,
+          "email": "user@example.com",
+          "phone_number": "+1234567890",
+          "role": "borrower",
+          "status": "active",
+          "checklist": ["Register", "KYC", "BANK_ACCOUNT"],
+          "date_of_birth": "1990-01-15",
+          "first_name": "John",
+          "last_name": "Doe"
+        }
+      }
+    },
+    "kyc_verification": {
+      "endpoint": "GET /api/auth/kyc/",
+      "description": "Initiate KYC verification",
+      "headers": {
+        "Authorization": "Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+      },
+      "response_success": {
+        "code": 1,
+        "message": "Kyc url created Successfully",
+        "data": {
+          "status": "requires_input",
+          "url": "https://verify.stripe.com/start/..."
+        }
+      }
+    },
+    "check_kyc_status": {
+      "endpoint": "GET /api/auth/kyc-status/",
+      "description": "Check KYC verification status",
+      "headers": {
+        "Authorization": "Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+      },
+      "response_success": {
+        "code": 1,
+        "message": "KYC verified successfully",
+        "data": {}
+      },
+      "response_error": {
+        "code": 0,
+        "message": "Your Previous kyc was failed, Please try again",
+        "data": {}
+      }
+    },
+    "add_address": {
+      "endpoint": "POST /api/auth/add-address/",
+      "description": "Add user address",
+      "headers": {
+        "Authorization": "Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+      },
+      "request": {
+        "street_address": "123 Main Street",
+        "city": "Toronto",
+        "state": "Ontario",
+        "country": "Canada",
+        "postal_code": "M5V 3A8"
+      },
+      "response_success": {
+        "code": 1,
+        "message": "Address created successfully",
+        "data": {
+          "id": 1,
+          "street_address": "123 Main Street",
+          "city": "Toronto",
+          "state": "Ontario",
+          "country": "Canada",
+          "postal_code": "M5V 3A8"
+        }
+      },
+      "response_error": {
+        "code": 0,
+        "message": "Please enter required fields",
+        "data": {
+          "street_address": ["This field is required."],
+          "city": ["This field is required."]
+        }
+      }
+    },
+    "add_bank_details": {
+      "endpoint": "POST /api/auth/add-bank-details/",
+      "description": "Add user bank details",
+      "headers": {
+        "Authorization": "Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+      },
+      "request": {
+        "account_holder_name": "John Doe",
+        "routing_number": "123456789",
+        "account_number": 1234567890,
+        "account_type": "checking"
+      },
+      "response_success": {
+        "code": 1,
+        "message": "Bank details added successfully",
+        "data": {
+          "id": 1,
+          "account_holder_name": "John Doe",
+          "routing_number": "123456789",
+          "account_type": "checking"
+        }
+      },
+      "response_error": {
+        "code": 0,
+        "message": "Please enter required fields",
+        "data": {
+          "account_holder_name": ["This field is required."],
+          "routing_number": ["This field is required."]
+        }
+      }
+    }
+  },
+  "borrower_apis": {
+    "credit_statement_analysis": {
+      "endpoint": "POST /api/borrower/credit-statement/",
+      "description": "Upload and analyze bank statement PDF",
+      "headers": {
+        "Authorization": "Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+      },
+      "request": {
+        "file": "PDF file (multipart/form-data)"
+      },
+      "response_success": {
+        "code": 1,
+        "message": "Successfully processed file",
+        "data": {
+          "id": 1,
+          "risk_score": 750,
+          "average_transaction": 1250.5,
+          "payment_consistency": 0.95,
+          "date_recorded": "2024-01-15T10:30:00Z",
+          "statement_start_date": "2023-12-01",
+          "statement_end_date": "2023-12-31",
+          "credit_utilization": 0.35
+        }
+      },
+      "response_errors": {
+        "no_file": {
+          "code": 0,
+          "message": "No file is selected",
+          "data": {}
+        },
+        "invalid_file_type": {
+          "code": 0,
+          "message": "Invalid file type",
+          "data": {}
+        },
+        "empty_file": {
+          "code": 0,
+          "message": "Uploaded file is empty",
+          "data": {}
+        }
+      }
+    },
+    "create_borrower_profile": {
+      "endpoint": "POST /api/borrower/create-borrower/",
+      "description": "Create borrower profile",
+      "headers": {
+        "Authorization": "Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+      },
+      "request": {
+        "employment_status": "employed",
+        "annual_income": 75000.0
+      },
+      "response_success": {
+        "code": 1,
+        "message": "Borrower profile created successfully",
+        "data": {
+          "id": 1,
+          "annual_income": 75000.0,
+          "employment_status": "employed",
+          "account_balance": 0.0
+        }
+      },
+      "response_error": {
+        "code": 0,
+        "message": "You have already borrower account",
+        "data": {}
+      }
+    }
+  },
+  "loan_apis": {
+    "create_loan": {
+      "endpoint": "POST /api/loan/create-loan/",
+      "description": "Create a new loan application",
+      "headers": {
+        "Authorization": "Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+      },
+      "request": {
+        "amount": 10000.0,
+        "term_months": 24,
+        "loan_purpose": "Home improvement"
+      },
+      "response_success": {
+        "code": 1,
+        "message": "Loan created successfully",
+        "data": {
+          "id": 1,
+          "amount": 10000.0,
+          "term_months": 24,
+          "status": "pending",
+          "loan_purpose": "Home improvement",
+          "interest_rate": 10.0,
+          "total_payable": 12000.0,
+          "is_fulfill": false,
+          "loan_amount": 10000.0
+        }
+      },
+      "response_error": {
+        "code": 0,
+        "message": "You have previous loan which is not closed",
+        "data": {}
+      }
+    },
+    "view_own_loans": {
+      "endpoint": "GET /api/loan/view-loan/",
+      "description": "Get borrower's own loans",
+      "headers": {
+        "Authorization": "Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+      },
+      "response_success": {
+        "code": 1,
+        "message": "Request was successful",
+        "data": [
+          {
+            "id": 1,
+            "amount": 10000.0,
+            "term_months": 24,
+            "status": "approved",
+            "loan_purpose": "Home improvement",
+            "interest_rate": 10.0,
+            "total_payable": 12000.0,
+            "is_fulfill": true,
+            "loan_amount": 10000.0
+          }
+        ]
+      },
+      "response_empty": {
+        "code": 1,
+        "message": "No loans found for this borrower",
+        "data": []
+      }
+    },
+    "view_all_loans": {
+      "endpoint": "GET /api/loan/loan-list/",
+      "description": "Get all available loans for investment",
+      "headers": {
+        "Authorization": "Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+      },
+      "response_success": {
+        "code": 1,
+        "message": "Request was successful",
+        "data": [
+          {
+            "id": 1,
+            "amount": 10000.0,
+            "term_months": 24,
+            "status": "approved",
+            "loan_purpose": "Home improvement",
+            "interest_rate": 10.0,
+            "total_payable": 12000.0,
+            "is_fulfill": false,
+            "loan_amount": 10000.0
+          }
+        ]
+      },
+      "response_empty": {
+        "code": 1,
+        "message": "No loans found",
+        "data": {}
+      }
+    },
+    "create_investment": {
+      "endpoint": "POST /api/loan/create-investment/",
+      "description": "Invest in a loan",
+      "headers": {
+        "Authorization": "Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+      },
+      "request": {
+        "amount": 5000.0,
+        "loan": 1
+      },
+      "response_success": {
+        "code": 1,
+        "message": "Investment created successfully",
+        "data": {
+          "id": 1,
+          "loan": 1,
+          "investor": 1,
+          "amount": 5000.0,
+          "net_return": 6000.0,
+          "created_at": "2024-01-15T10:30:00Z",
+          "closed_at": null
+        }
+      },
+      "response_error": {
+        "code": 0,
+        "message": "Please enter required fields",
+        "data": {
+          "amount": ["This field is required."],
+          "loan": ["This field is required."]
+        }
+      }
+    },
+    "loan_repayment": {
+      "endpoint": "POST /api/loan/loan-repayment/",
+      "description": "Make loan repayment",
+      "headers": {
+        "Authorization": "Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+      },
+      "request": {
+        "loan_id": 1,
+        "repayment_id": 1
+      },
+      "response_success": {
+        "code": 1,
+        "message": "Payment link generated successfully",
+        "data": {
+          "id": 1,
+          "stripe_payment_id": "pi_1234567890",
+          "amount": 500.0,
+          "payment_date": "2024-01-15T10:30:00Z",
+          "status": "pending",
+          "url": "https://checkout.stripe.com/pay/..."
+        }
+      },
+      "response_errors": {
+        "already_paid": {
+          "code": 0,
+          "message": "Your EMI is already paid",
+          "data": {}
+        },
+        "payment_incomplete": {
+          "code": 0,
+          "message": "payment is incomplete",
+          "data": {}
+        }
+      }
+    },
+    "check_repayment_status": {
+      "endpoint": "GET /api/loan/check-repayment/",
+      "description": "Check loan repayment status",
+      "headers": {
+        "Authorization": "Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+      },
+      "response_success": {
+        "code": 1,
+        "message": "Request was successful",
+        "data": [
+          {
+            "installment_number": 1,
+            "due_date": "2024-02-15T00:00:00Z",
+            "payment_status": "pending",
+            "amount_paid": 0.0,
+            "amount_due": 500.0,
+            "is_payment_enabled": true
+          }
+        ]
+      },
+      "response_error": {
+        "code": 0,
+        "message": "Borrower not found",
+        "data": {}
+      }
+    },
+    "check_payment_status": {
+      "endpoint": "GET /api/loan/payment-status/",
+      "description": "Check payment status",
+      "headers": {
+        "Authorization": "Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+      },
+      "response_success": {
+        "code": 1,
+        "message": "Request was successful",
+        "data": {
+          "payment_status": "complete",
+          "all_payments_complete": true
+        }
+      }
+    }
+  },
+  "investor_apis": {
+    "add_funds": {
+      "endpoint": "POST /api/investor/add-fund/",
+      "description": "Add funds to investor account",
+      "headers": {
+        "Authorization": "Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+      },
+      "request": {
+        "amount": 10000.0
+      },
+      "response_success": {
+        "code": 1,
+        "message": "Payment link generated successfully",
+        "data": {
+          "id": 1,
+          "stripe_payment_id": "pi_1234567890",
+          "payment_amount": 10000.0,
+          "url": "https://checkout.stripe.com/pay/..."
+        }
+      },
+      "response_error": {
+        "code": 0,
+        "message": "Unable to add fund please try again",
+        "data": {}
+      }
+    },
+    "check_fund_status": {
+      "endpoint": "GET /api/investor/latest-fund-status/",
+      "description": "Check latest fund addition status",
+      "headers": {
+        "Authorization": "Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+      },
+      "response_success": {
+        "code": 1,
+        "message": "Request was successful",
+        "data": {
+          "id": 1,
+          "stripe_payment_id": "pi_1234567890",
+          "payment_amount": 10000.0,
+          "status": "complete"
+        }
+      },
+      "response_error": {
+        "code": 0,
+        "message": "Invalid data",
+        "data": {}
+      }
+    },
+    "get_wallet_balance": {
+      "endpoint": "GET /api/common/wallet-balance/",
+      "description": "Get user wallet balance",
+      "headers": {
+        "Authorization": "Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+      },
+      "response_success": {
+        "code": 1,
+        "message": "Request was successful",
+        "data": {
+          "account_balance": 5000.0
+        }
+      }
+    },
+    "withdraw_balance": {
+      "endpoint": "POST /api/common/withdraw-balance/",
+      "description": "Withdraw funds from account",
+      "headers": {
+        "Authorization": "Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+      },
+      "request": {
+        "amount": 2000.0
+      },
+      "response_success": {
+        "code": 1,
+        "message": "Withdrawal processed successfully",
+        "data": {
+          "transaction_id": "txn_1234567890",
+          "amount": 2000.0,
+          "status": "pending"
+        }
+      },
+      "response_error": {
+        "code": 0,
+        "message": "Insufficient balance",
+        "data": {}
+      }
+    },
+    "get_portfolio_value": {
+      "endpoint": "GET /api/investor/portfolio-value/",
+      "description": "Get investor portfolio value",
+      "headers": {
+        "Authorization": "Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+      },
+      "response_success": {
+        "code": 1,
+        "message": "Request was successful",
+        "data": {
+          "total_invested": 15000.0,
+          "total_return": 16500.0,
+          "net_profit": 1500.0,
+          "portfolio_value": 16500.0
+        }
+      }
+    },
+    "get_my_investments": {
+      "endpoint": "GET /api/investor/my-investment/",
+      "description": "Get investor's investments",
+      "headers": {
+        "Authorization": "Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+      },
+      "response_success": {
+        "code": 1,
+        "message": "Request was successful",
+        "data": [
+          {
+            "id": 1,
+            "loan": 1,
+            "investor": 1,
+            "amount": 5000.0,
+            "net_return": 6000.0,
+            "created_at": "2024-01-15T10:30:00Z",
+            "closed_at": null
+          }
+        ]
+      }
+    },
+    "get_recent_transactions": {
+      "endpoint": "GET /api/investor/recent-transaction/",
+      "description": "Get recent transaction history",
+      "headers": {
+        "Authorization": "Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+      },
+      "response_success": {
+        "code": 1,
+        "message": "Request was successful",
+        "data": [
+          {
+            "id": 1,
+            "transaction_type": "investment",
+            "amount": 5000.0,
+            "transaction_date": "2024-01-15T10:30:00Z",
+            "description": "Investment in Loan #1",
+            "url": null,
+            "payment_id": "pi_1234567890"
+          }
+        ]
+      }
+    },
+    "get_expected_return": {
+      "endpoint": "GET /api/loan/expected-return/",
+      "description": "Get expected return for investment",
+      "headers": {
+        "Authorization": "Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+      },
+      "response_success": {
+        "code": 1,
+        "message": "Request was successful",
+        "data": {
+          "loan_id": 1,
+          "investment_amount": 5000.0,
+          "expected_return": 6000.0,
+          "interest_rate": 10.0,
+          "term_months": 24
+        }
+      }
+    },
+    "investment_closure_process": {
+      "endpoint": "POST /api/investor/get-return/",
+      "description": "Process investment closure and get returns",
+      "headers": {
+        "Authorization": "Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"
+      },
+      "request": {
+        "investment_id": 1
+      },
+      "response_success": {
+        "code": 1,
+        "message": "Investment closure processed successfully",
+        "data": {
+          "investment_id": 1,
+          "return_amount": 6000.0,
+          "status": "closed",
+          "closed_at": "2024-01-15T10:30:00Z"
+        }
+      },
+      "response_error": {
+        "code": 0,
+        "message": "No pending closures found for your investments",
+        "data": {}
+      }
+    }
+  },
+  "common_error_responses": {
+    "validation_error": {
+      "code": 0,
+      "message": "Please enter required fields",
+      "data": {
+        "field_name": ["This field is required."],
+        "email": ["Enter a valid email address."]
+      }
+    },
+    "authentication_error": {
+      "code": 0,
+      "message": "Authentication credentials were not provided.",
+      "data": {}
+    },
+    "permission_error": {
+      "code": 0,
+      "message": "You do not have permission to perform this action.",
+      "data": {}
+    },
+    "not_found_error": {
+      "code": 0,
+      "message": "Not found.",
+      "data": {}
+    },
+    "server_error": {
+      "code": 0,
+      "message": "Internal server error",
+      "data": {}
+    }
+  },
+  "status_codes": {
+    "loan_status": ["pending", "processing", "approved", "repaid", "defaulted"],
+    "user_status": ["active", "inactive", "suspended"],
+    "verification_status": ["pending", "verified", "failed"],
+    "payment_status": ["pending", "completed", "failed"],
+    "repayment_status": ["pending", "paid", "missed"],
+    "employment_status": ["employed", "self-employed", "unemployed", "student"],
+    "transaction_types": ["investment", "payment", "withdrawal", "deposit"]
+  },
+  "required_fields": {
+    "user_registration": ["email", "phone_number", "password", "date_of_birth"],
+    "user_login": ["email", "password"],
+    "address": ["street_address", "city", "state", "country", "postal_code"],
+    "bank_details": [
+      "account_holder_name",
+      "routing_number",
+      "account_number",
+      "account_type"
+    ],
+    "borrower_profile": ["employment_status", "annual_income"],
+    "loan_creation": ["amount", "term_months", "loan_purpose"],
+    "investment": ["amount", "loan"],
+    "loan_repayment": ["loan_id", "repayment_id"],
+    "add_funds": ["amount"]
+  }
+}
