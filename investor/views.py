@@ -169,9 +169,11 @@ class WithdrawBalance(BaseAuthenticatedView,BaseValidator,generics.CreateAPIView
                 user_balance = InvestorBalance.objects.filter(user=user.id).first()
 
 
-            requested_amount=request.data.get("amount")
-            print(user_balance)
-            if user_balance.account_balance<requested_amount:
+            requested_amount = Decimal(str(request.data.get("amount")))
+            print(user_balance.account_balance,"aaaaa")
+            print(requested_amount,"aaa111aa")
+            print(f"Balance type: {type(user_balance.account_balance)}, Requested type: {type(requested_amount)}")
+            if user_balance.account_balance < requested_amount:
                 return enhance_response(
                     data={},
                     message="In sufficient balance",
@@ -179,6 +181,8 @@ class WithdrawBalance(BaseAuthenticatedView,BaseValidator,generics.CreateAPIView
                 )
             stripe_response=create_payout(requested_amount,user.stripe_account_id)
             stripe_response_transfer=transfer_funds(requested_amount,user.stripe_account_id)
+            print(stripe_response)
+            print(stripe_response_transfer)
             if user.role == "borrower":
                 borrower_details = Borrower.objects.filter(user=user.id).first()
                 borrower_details.account_balance=float(borrower_details.account_balance-requested_amount)

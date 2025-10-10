@@ -5,8 +5,9 @@ from enhancefund.Constant import REQUIRED_USER_FIELDS, REQUIRED_USER_FIELDS_LOGI
 from enhancefund.postvalidators import BaseValidator
 from enhancefund.rolebasedauth import BaseAuthenticatedView
 from enhancefund.utils import enhance_response, stripe_external_bank_account
-from ..models import User, UserAddress, UserBankDetails
-from ..serializers import UserSerializer, UserAddressSerializer, UserBankDetailsSerializer
+from enhancefund.email_utils import EmailService
+from ..models import User, UserAddress, UserBankDetails, PasswordResetToken
+from ..serializers import UserSerializer, UserAddressSerializer, UserBankDetailsSerializer, ForgotPasswordSerializer, ResetPasswordSerializer
 from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework import generics
@@ -16,6 +17,7 @@ from rest_framework.response import Response
 #  create user api
 from django.contrib.auth.models import Group
 from rest_framework.authtoken.models import Token
+from django.utils import timezone
 
 
 class CreateUserAPI(generics.CreateAPIView, BaseValidator):
@@ -194,4 +196,102 @@ class CrerateBankAccountDetails(BaseAuthenticatedView,generics.CreateAPIView,Bas
         # stripe_bank=stripe.Account.create_external_account.(,
         # {})
         return enhance_response(data={}, message="Unexpected Error", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ForgotPasswordAPI(generics.GenericAPIView):
+    """
+    API endpoint for requesting a password reset.
+    User provides their email and receives a reset link.
+    """
+    serializer_class = ForgotPasswordSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        
+        if not serializer.is_valid():
+            return enhance_response(
+                data=serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST,
+                message="Invalid email address"
+            )
+        
+        email = serializer.validated_data['email']
+        
+        try:
+            user = User.objects.get(email=email)
+            
+            # Invalidate any existing tokens for this user
+            PasswordResetToken.objects.filter(
+                user=user, 
+                is_used=False
+            ).update(is_used=True)
+            
+            # Create new reset token
+            reset_token = PasswordResetToken.objects.create(user=user)
+            
+            # Send password reset email
+            email_sent = EmailService.send_password_reset_email(
+                user=user,
+                reset_token=reset_token.token
+            )
+            
+            if email_sent:
+                return enhance_response(
+                    data={"email": email},
+                    status=status.HTTP_200_OK,
+                    message="Password reset link has been sent to your email"
+                )
+            else:
+                return enhance_response(
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    message="Failed to send reset email. Please try again later."
+                )
+                
+        except User.DoesNotExist:
+            # For security, we don't reveal if the email doesn't exist
+            # Return success message anyway
+            return enhance_response(
+                data={"email": email},
+                status=status.HTTP_200_OK,
+                message="If an account exists with this email, a password reset link has been sent"
+            )
+
+
+class ResetPasswordAPI(generics.GenericAPIView):
+    """
+    API endpoint for resetting password using the token.
+    User provides the token and new password.
+    """
+    serializer_class = ResetPasswordSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        
+        if not serializer.is_valid():
+            return enhance_response(
+                data=serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST,
+                message="Invalid request"
+            )
+        
+        # Get the reset token from validated data
+        reset_token = serializer.validated_data['reset_token']
+        new_password = serializer.validated_data['new_password']
+        
+        # Get the user and update password
+        user = reset_token.user
+        user.set_password(new_password)
+        user.save()
+        
+        # Mark token as used
+        reset_token.is_used = True
+        reset_token.save()
+        
+        # Send confirmation email
+        EmailService.send_password_changed_notification(user)
+        
+        return enhance_response(
+            status=status.HTTP_200_OK,
+            message="Password has been reset successfully. You can now login with your new password."
+        )
 

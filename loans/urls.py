@@ -2,11 +2,12 @@
 
 from django.urls import path
 
-from loans.views import CreateLoan, ViewLoan, loanList, createInvestment, expectedReturn, myInvestment, \
+from loans.views import CreateLoan, CalculateLoan, ViewLoan, loanList, createInvestment, expectedReturn, myInvestment, \
     checkRepaymentBorrower, loanRepayment, checkRefundStatus
 
 urlpatterns = [
     path('loan/create-loan/', CreateLoan.as_view(), name='Create-loan'),
+    path('loan/calculate-loan/', CalculateLoan.as_view(), name='calculate-loan'),
     path('loan/view-loan/', ViewLoan.as_view(), name='view-own-loan'),
     path('loan/loan-list/', loanList.as_view(), name='view-all-loan'),
     path('loan/create-investment/', createInvestment.as_view(), name='view-all-loan'),

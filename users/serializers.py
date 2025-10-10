@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from enhancefund.commonserializer import CommonSerializer
-from .models import User, UserAddress, UserVerification, UserBankDetails
+from .models import User, UserAddress, UserVerification, UserBankDetails, PasswordResetToken
 
 
 class UserSerializer(CommonSerializer):
@@ -104,6 +104,42 @@ class UserBankDetailsSerializer(CommonSerializer):
         return UserBankDetails.objects.create(user=user, **validated_data)
 
 
+class ForgotPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+
+    def validate_email(self, value):
+        """Validate that the email exists in the system"""
+        try:
+            User.objects.get(email=value)
+        except User.DoesNotExist:
+            # For security reasons, we don't reveal if email doesn't exist
+            # But we still validate it
+            pass
+        return value
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    token = serializers.CharField(required=True)
+    new_password = serializers.CharField(write_only=True, required=True)
+    confirm_password = serializers.CharField(write_only=True, required=True)
+
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['confirm_password']:
+            raise serializers.ValidationError({"password": "Password fields didn't match."})
+
+        # Validate the password strength
+        validate_password(attrs['new_password'])
+
+        # Validate token
+        try:
+            reset_token = PasswordResetToken.objects.get(token=attrs['token'])
+            if not reset_token.is_valid():
+                raise serializers.ValidationError({"token": "Token is invalid or has expired."})
+            attrs['reset_token'] = reset_token
+        except PasswordResetToken.DoesNotExist:
+            raise serializers.ValidationError({"token": "Invalid token."})
+
+        return attrs
 
 
 

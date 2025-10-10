@@ -188,9 +188,7 @@ ALLOWED_HOSTS = [
     'enhancefund.netlify.app'
 ]
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3003',  # Allows all ports on localhost
-    'http://127.0.0.1:3003',  # Allows all ports on 127.0.0.1
-    'http://127.0.0.1:8000',  # Allows all ports on 127.0.0.1
+    'http://localhost:5174 ',
     'https://enhancefund.netlify.app',
     'https://enhancefund.onrender.com',  # Replace with your Render app URL
 ]
@@ -325,7 +323,21 @@ MIDDLEWARE += [
     'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-# CORS_ORIGIN_ALLOW_ALL = True
+CORS_ORIGIN_ALLOW_ALL = True
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Email Configuration
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@enhancefund.com')
+
+# Site Configuration for Password Reset
+SITE_URL = os.getenv('SITE_URL', 'http://localhost:3000')
+SITE_NAME = os.getenv('SITE_NAME', 'EnhanceFund')
+SUPPORT_EMAIL = os.getenv('SUPPORT_EMAIL', 'support@enhancefund.com')
