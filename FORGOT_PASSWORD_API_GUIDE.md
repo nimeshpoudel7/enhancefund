@@ -549,3 +549,5 @@ This will create the `password_reset_tokens` table in your database.
 For issues or questions, contact the development team or refer to the main project documentation.
 
 **Last Updated:** October 10, 2025
+
+

@@ -3,9 +3,9 @@ import redis
 
 
 r = redis.Redis(
-  host='redis-12912.crce174.ca-central-1-1.ec2.redns.redis-cloud.com',
-  port=12912,
-  password='ZaO5aijLXv3P42drftikEcj9WtSsvYqQ')
+  host='redis-10113.c261.us-east-1-4.ec2.redns.redis-cloud.com',
+  port=10113,
+  password='C0KQIcfAM9S1EhvjHxQXbdspfn1xKzLO')
 def set_cache_value(key, value, timeout=60*15):
     """
     Set a value in the Redis cache.

@@ -414,3 +414,5 @@ Schedule the cleanup command to run daily:
 The forgot password feature is now fully implemented and ready to use! Just complete the setup steps above, and your users will be able to reset their passwords securely.
 
 **Last Updated:** October 10, 2025
+
+
