@@ -257,7 +257,7 @@ class InvestmentClosureProcess(BaseInvestorView, BaseValidator, generics.Generic
                     loan=loan,
                     payment_status='paid'
                 ).exists()
-                print(has_repayments)
+                print(has_repayments,"has_repayments")
                 if has_repayments and investment.net_return > 0:
                     try:
                         transaction_data = {
@@ -304,7 +304,8 @@ class InvestmentClosureProcess(BaseInvestorView, BaseValidator, generics.Generic
                         })
                         continue
             investor_balance = InvestorBalance.objects.filter(user=user_id).first()
-            new_added_amount =sum
+            new_added_amount = sum
+            print(new_added_amount, sum,"aaaaaa")
             balance["account_balance"] = Decimal(investor_balance.account_balance) + Decimal(new_added_amount)
             serializerInvestor = InvestorBalanceSerializer(investor_balance, data=balance, partial=True,
                                                            context={"user": user_id})

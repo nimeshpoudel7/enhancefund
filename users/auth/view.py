@@ -216,7 +216,7 @@ class ForgotPasswordAPI(generics.GenericAPIView):
             )
         
         email = serializer.validated_data['email']
-        
+        print("email",email)
         try:
             user = User.objects.get(email=email)
             
@@ -243,7 +243,7 @@ class ForgotPasswordAPI(generics.GenericAPIView):
                 )
             else:
                 return enhance_response(
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    status=status.HTTP_400_BAD_REQUEST,
                     message="Failed to send reset email. Please try again later."
                 )
                 

@@ -21,6 +21,7 @@ from rest_framework import generics
 from django.db import models
 from datetime import date, timedelta, datetime
 from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 class CreateLoan(BaseBorrowerView, BaseValidator, generics.CreateAPIView):
     def calculate_interest_rate(self, payment_frequency):
@@ -91,17 +92,19 @@ class CreateLoan(BaseBorrowerView, BaseValidator, generics.CreateAPIView):
                                     message="You have previous loan which is not closed")
 
         payment_frequency = request.data.get("payment_frequency")
-
+        print(request.data,"aaa")
         interest_rate = self.calculate_interest_rate(payment_frequency)
         amount = float(request.data.get("amount"))
         term_months = int(request.data.get("term_months"))
         total_payable = self.calculate_total_payable(amount, interest_rate, term_months)
 
         number_of_payments = self.calculate_number_of_payments(term_months, payment_frequency)
-        print(number_of_payments)
+        print(number_of_payments,"aaa")
+        loan_amount = (Decimal(amount) * Decimal('0.97')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
         data_to_send = {
             "amount": amount,
-            "loan_amount":amount*0.97,
+            "loan_amount": loan_amount,
             "loan_purpose": request.data.get("loan_purpose"),
             "term_months": term_months,
             "status": 'processing',
@@ -127,12 +130,12 @@ class CreateLoan(BaseBorrowerView, BaseValidator, generics.CreateAPIView):
                                     message="Your loan is created successfully")
 
 class CalculateLoan(BaseBorrowerView, BaseValidator, generics.RetrieveAPIView):
-    """
-    API endpoint to calculate loan details before creating the loan.
+    """API endpoint to calculate loan details before creating the loan.
+
     Accepts query parameters: amount, term_months, payment_frequency
-    Returns: loan calculations including total payable, interest, monthly payments, etc.
+    Returns: loan calculations including total payable, interest, payments, etc.
     """
-    
+
     def calculate_interest_rate(self, payment_frequency):
         base_rate = 10.0  # Base interest rate
         frequency_rates = {
@@ -143,9 +146,13 @@ class CalculateLoan(BaseBorrowerView, BaseValidator, generics.RetrieveAPIView):
         return base_rate + frequency_rates.get(payment_frequency, 0)
 
     def calculate_total_payable(self, amount, interest_rate, term_months):
-        monthly_rate = interest_rate / 100 / 12
-        total_payable = amount * (1 + monthly_rate) ** term_months
-        return round(total_payable, 2)
+        # Use Decimal to calculate total payable precisely and return Decimal quantized to 2dp
+        from decimal import Decimal, ROUND_HALF_UP
+        amount = Decimal(str(amount))
+        interest_rate = Decimal(str(interest_rate))
+        monthly_rate = interest_rate / Decimal('100') / Decimal('12')
+        total_payable = amount * ((Decimal('1') + monthly_rate) ** Decimal(term_months))
+        return total_payable.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     def calculate_number_of_payments(self, term_months, payment_frequency):
         if payment_frequency == 'one_time':
@@ -158,30 +165,29 @@ class CalculateLoan(BaseBorrowerView, BaseValidator, generics.RetrieveAPIView):
             return term_months  # Default to monthly if frequency is not recognized
 
     def get(self, request, *args, **kwargs):
-        # Get query parameters
+        from decimal import Decimal
+        # Get and validate query parameters
         try:
-            amount = float(request.query_params.get('amount'))
+            amount = Decimal(str(request.query_params.get('amount')))
             term_months = int(request.query_params.get('term_months'))
             payment_frequency = request.query_params.get('payment_frequency')
         except (TypeError, ValueError):
             return enhance_response(
-                data={}, 
+                data={},
                 status=status.HTTP_400_BAD_REQUEST,
                 message="Invalid parameters. Please provide valid amount, term_months, and payment_frequency"
             )
 
-        # Validate required parameters
         if not all([amount, term_months, payment_frequency]):
             return enhance_response(
-                data={}, 
+                data={},
                 status=status.HTTP_400_BAD_REQUEST,
                 message="Missing required parameters: amount, term_months, payment_frequency"
             )
 
-        # Validate payment frequency
         if payment_frequency not in ['monthly', '3_monthly', 'one_time']:
             return enhance_response(
-                data={}, 
+                data={},
                 status=status.HTTP_400_BAD_REQUEST,
                 message="Invalid payment_frequency. Must be 'monthly', '3_monthly', or 'one_time'"
             )
@@ -189,29 +195,29 @@ class CalculateLoan(BaseBorrowerView, BaseValidator, generics.RetrieveAPIView):
         # Calculate loan details
         interest_rate = self.calculate_interest_rate(payment_frequency)
         total_payable = self.calculate_total_payable(amount, interest_rate, term_months)
-        total_interest = round(total_payable - amount, 2)
+        total_interest = float(total_payable - amount)
         number_of_payments = self.calculate_number_of_payments(term_months, payment_frequency)
-        amount_per_payment = round(total_payable / number_of_payments, 2)
-        borrower_receives = round(amount * 0.97, 2)
-        effective_interest_rate = round((total_interest / amount) * 100, 2)
+        amount_per_payment = float((total_payable / Decimal(number_of_payments)).quantize(Decimal('0.01')))
+        borrower_receives = float((amount * Decimal('0.97')).quantize(Decimal('0.01')))
+        effective_interest_rate = round((total_interest / float(amount)) * 100, 2)
 
-        # Prepare response data
+        # Prepare response data (convert Decimals to floats for JSON)
         loan_calculation = {
-            "loan_amount_requested": amount,
+            "loan_amount_requested": float(amount),
             "term_months": term_months,
             "payment_frequency": payment_frequency,
             "interest_rate": interest_rate,
-            "total_payable": total_payable,
-            "total_interest": total_interest,
+            "total_payable": float(total_payable),
+            "total_interest": round(total_interest, 2),
             "number_of_payments": number_of_payments,
             "amount_per_payment": amount_per_payment,
             "borrower_receives": borrower_receives,
             "effective_interest_rate": effective_interest_rate,
             "summary": {
-                "you_request": f"${amount}",
+                "you_request": f"${float(amount)}",
                 "you_receive": f"${borrower_receives}",
-                "you_pay_back": f"${total_payable}",
-                "total_interest_cost": f"${total_interest}",
+                "you_pay_back": f"${float(total_payable)}",
+                "total_interest_cost": f"${round(total_interest,2)}",
                 "payment_schedule": f"{number_of_payments} payments of ${amount_per_payment} each"
             }
         }
