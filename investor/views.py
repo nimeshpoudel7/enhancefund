@@ -575,7 +575,7 @@ class InvestmentPerformanceChart(BaseInvestorView, BaseValidator, generics.Gener
             total_invested = sum([float(monthly_data[m]['invested']) for m in sorted_months])
             total_returns = sum([float(monthly_data[m]['returns']) for m in sorted_months])
             total_investments = sum([monthly_data[m]['count'] for m in sorted_months])
-            roi_percentage = (total_returns / total_invested * 100) if total_invested > 0 else 0
+            roi_percentage = ((total_returns-total_invested) / total_invested * 100) if total_invested > 0 else 0
             
             summary = {
                 'total_invested': round(total_invested, 2),
