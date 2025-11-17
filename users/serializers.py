@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from enhancefund.commonserializer import CommonSerializer
-from .models import User, UserAddress, UserVerification, UserBankDetails, PasswordResetToken
+from .models import User, UserAddress, UserVerification, UserBankDetails, PasswordResetToken, Notification
 
 
 class UserSerializer(CommonSerializer):
@@ -140,6 +140,18 @@ class ResetPasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError({"token": "Invalid token."})
 
         return attrs
+
+
+class NotificationSerializer(CommonSerializer):
+    notification_type_display = serializers.CharField(source='get_notification_type_display', read_only=True)
+    
+    class Meta:
+        model = Notification
+        fields = [
+            'id', 'notification_type', 'notification_type_display', 'title', 
+            'message', 'is_read', 'created_at', 'related_id', 'related_type'
+        ]
+        read_only_fields = ['id', 'created_at']
 
 
 

@@ -188,7 +188,10 @@ ALLOWED_HOSTS = [
     'enhancefund.netlify.app'
 ]
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5174 ',
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:5174',
     'https://enhancefund.netlify.app',
     'https://enhancefund.onrender.com',  # Replace with your Render app URL
 ]
@@ -198,12 +201,14 @@ CORS_ALLOW_HEADERS = [
     "X-Requested-With",
     "Accept",
     "Origin",
+    "Authorization",
 ]
 
 CORS_ALLOW_METHODS = [
     "GET",
     "POST",
     "PUT",
+    "PATCH",
     "DELETE",
     "OPTIONS",
 ]
@@ -219,6 +224,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'channels',
     'users',
     'loans',
     'borrower',
@@ -341,3 +347,18 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@enhancefund.com')
 SITE_URL = os.getenv('SITE_URL', 'http://localhost:3000')
 SITE_NAME = os.getenv('SITE_NAME', 'EnhanceFund')
 SUPPORT_EMAIL = os.getenv('SUPPORT_EMAIL', 'support@enhancefund.com')
+
+# ASGI Configuration for WebSocket support
+ASGI_APPLICATION = 'enhancefund.asgi.application'
+
+# Channel Layers Configuration for WebSocket
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',  # Use InMemory for development
+        # For production, use Redis:
+        # 'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        # 'CONFIG': {
+        #     "hosts": [('127.0.0.1', 6379)],
+        # },
+    },
+}

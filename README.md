@@ -33,6 +33,22 @@ python manage.py migrate
 
 6. Run the server
 
+**For WebSocket support (Real-time Notifications):**
+```bash
+# Windows
+start_server.bat
+
+# Linux/Mac
+chmod +x start_server.sh
+./start_server.sh
+
+# Or manually:
+daphne -b 0.0.0.0 -p 8000 enhancefund.asgi:application
+```
+
+**Note:** For real-time notifications to work, you MUST use Daphne instead of `runserver`.
+
+**Without WebSocket (Regular HTTP only):**
 ```bash
 python manage.py runserver
 ```

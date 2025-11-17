@@ -170,3 +170,33 @@ class PasswordResetToken(models.Model):
 
     def __str__(self):
         return f"Password Reset Token for {self.user.email}"
+
+
+class Notification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    NOTIFICATION_TYPE_CHOICES = [
+        ('fund_added', 'Fund Added'),
+        ('fund_withdrawn', 'Fund Withdrawn'),
+        ('investment_made', 'Investment Made'),
+        ('investment_return', 'Investment Return'),
+        ('loan_funded', 'Loan Funded'),
+        ('loan_fulfilled', 'Loan Fulfilled'),
+        ('loan_approved', 'Loan Approved'),
+    ]
+    notification_type = models.CharField(max_length=50, choices=NOTIFICATION_TYPE_CHOICES)
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    related_id = models.IntegerField(null=True, blank=True, help_text="ID of related object (loan, investment, etc.)")
+    related_type = models.CharField(max_length=50, null=True, blank=True, help_text="Type of related object")
+    
+    class Meta:
+        db_table = 'notifications'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'is_read', '-created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.email} - {self.get_notification_type_display()} - {self.title}"
