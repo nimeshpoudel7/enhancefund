@@ -3,7 +3,7 @@
 from django.urls import path
 
 from investor.views import InvestorAddFunds, CheckFundStatus, WalletBalance, WithdrawBalance, InvestmentClosureProcess, \
-    RecentTancation
+    RecentTancation, InvestmentPerformanceChart, PortfolioDistributionChart
 from loans.views import PortfolioValue
 
 urlpatterns = [
@@ -14,5 +14,7 @@ urlpatterns = [
     path('investor/portfolio-value/', PortfolioValue.as_view(), name='WalletBalance'),
     path('investor/get-return/', InvestmentClosureProcess.as_view(), name='WalletBalance'),
     path('investor/recent-transaction/', RecentTancation.as_view(), name='WalletBalance'),
+    path('investor/charts/performance/', InvestmentPerformanceChart.as_view(), name='investment-performance-chart'),
+    path('investor/charts/distribution/', PortfolioDistributionChart.as_view(), name='portfolio-distribution-chart'),
 
 ]
