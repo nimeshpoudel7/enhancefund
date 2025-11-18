@@ -192,6 +192,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:5174',
     'http://127.0.0.1:5173',
     'http://127.0.0.1:5174',
+    'http:192.168.2.172:5173',
     'https://enhancefund.netlify.app',
     'https://enhancefund.onrender.com',  # Replace with your Render app URL
 ]
@@ -265,7 +266,7 @@ ROOT_URLCONF = 'enhancefund.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [str(BASE_DIR / 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -344,7 +345,7 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@enhancefund.com')
 
 # Site Configuration for Password Reset
-SITE_URL = os.getenv('SITE_URL', 'http://localhost:3000')
+SITE_URL = os.getenv('SITE_URL', 'http://localhost:5173')
 SITE_NAME = os.getenv('SITE_NAME', 'EnhanceFund')
 SUPPORT_EMAIL = os.getenv('SUPPORT_EMAIL', 'support@enhancefund.com')
 

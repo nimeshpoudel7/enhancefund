@@ -219,7 +219,7 @@ class ForgotPasswordAPI(generics.GenericAPIView):
         print("email",email)
         try:
             user = User.objects.get(email=email)
-            
+            print("user",user)
             # Invalidate any existing tokens for this user
             PasswordResetToken.objects.filter(
                 user=user, 

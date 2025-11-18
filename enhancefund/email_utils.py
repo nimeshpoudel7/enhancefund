@@ -180,7 +180,6 @@ class EmailService:
             'site_name': settings.SITE_NAME,
             'support_email': settings.SUPPORT_EMAIL
         }
-
         return EmailService.send_email(
             subject='Password Reset Request',
             to_email=[user.email],
