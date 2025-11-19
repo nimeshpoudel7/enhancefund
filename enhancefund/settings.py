@@ -192,7 +192,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:5174',
     'http://127.0.0.1:5173',
     'http://127.0.0.1:5174',
-    'http:192.168.2.172:5173',
+    'http://192.168.2.172:5173',
     'https://enhancefund.netlify.app',
     'https://enhancefund.onrender.com',  # Replace with your Render app URL
 ]

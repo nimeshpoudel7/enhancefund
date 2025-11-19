@@ -1,7 +1,8 @@
 import math
 
 from dateutil.relativedelta import relativedelta
-from django.db.models import Sum
+from django.db.models import Sum, Prefetch, OuterRef, Subquery, Value
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from borrower.models import Borrower, CreditScoreHistory
@@ -286,11 +287,39 @@ class loanList(BaseValidator, generics.ListAPIView):
 
     def get(self, request, *args, **kwargs):
         try:
-            # Retrieve all loans from the Loan model
-            loans = Loan.objects.all()
-            print(loans)
+            # Optimize queries using select_related, prefetch_related, and annotations
+            # Prefetch credit score history for all borrowers in one query
+            credit_score_prefetch = Prefetch(
+                'borrower__creditscorehistory_set',
+                queryset=CreditScoreHistory.objects.all()
+            )
+            
+            # Retrieve all loans with optimized queries
+            # Using select_related for borrower to avoid N+1 queries
+            # Using prefetch_related for credit_score_history to load all at once
+            # Using annotation with Subquery to calculate funded_amount in the database
+            loans = Loan.objects.select_related('borrower').prefetch_related(
+                credit_score_prefetch
+            ).annotate(
+                funded_amount=Coalesce(
+                    Subquery(
+                        Investment.objects.filter(
+                            loan=OuterRef('pk')
+                        ).values('loan').annotate(
+                            total=Sum('amount')
+                        ).values('total')[:1],
+                        output_field=models.DecimalField(max_digits=10, decimal_places=2)
+                    ),
+                    Value(0),
+                    output_field=models.DecimalField(max_digits=10, decimal_places=2)
+                )
+            )
+            
+            # Convert to list to evaluate queryset once
+            loans_list = list(loans)
+            
             # If no loans exist, return a 404 response
-            if not loans.exists():
+            if not loans_list:
                 return enhance_response(
                     data={},
                     message="No loans found",
@@ -300,22 +329,25 @@ class loanList(BaseValidator, generics.ListAPIView):
             # Serialize the list of loans
             loan_data = []
 
-            print(loan_data)
-            for loan in loans:
+            for loan in loans_list:
                 borrower = loan.borrower
-                borrower_data = BorrowerSerializer(borrower).data  # Use the correct serializer for the borrower
-                credit_score_history = CreditScoreHistory.objects.filter(borrower=borrower)
+                borrower_data = BorrowerSerializer(borrower).data
+                
+                # Get prefetched credit score history (already loaded, no additional query)
+                credit_score_history = borrower.creditscorehistory_set.all()
                 credit_score_history_data = CreditScoreHistorySerializer(credit_score_history, many=True).data
 
                 serializer = self.get_serializer(loan)
                 loan_dict = serializer.data
-                funded_amount = Investment.objects.filter(loan=loan).aggregate(Sum('amount'))['amount__sum'] or 0
-                remaining_amount = loan.amount - funded_amount
+                
+                # Use annotated funded_amount (already calculated in the query)
+                funded_amount = float(loan.funded_amount or 0)
+                remaining_amount = float(loan.amount) - funded_amount
+                
                 loan_dict['credit_score_history'] = credit_score_history_data
                 loan_dict['borrower'] = borrower_data
-
-                loan_dict['funded_amount'] = float(funded_amount)
-                loan_dict['remaining_amount'] = float(remaining_amount)
+                loan_dict['funded_amount'] = funded_amount
+                loan_dict['remaining_amount'] = remaining_amount
                 loan_data.append(loan_dict)
 
             return enhance_response(
